@@ -86,7 +86,7 @@ const Chambres = () => {
 
   const calculateTotal = () => {
     if (!selectedRoom) return 0;
-    
+
     const { duration } = bookingData;
     switch (duration) {
       case 'night':
@@ -106,6 +106,7 @@ const Chambres = () => {
     if (!selectedRoom || !user) return;
 
     try {
+      // Créer la réservation d'abord
       const bookingDetails = {
         user_id: user.id,
         room_id: selectedRoom.id,
@@ -130,17 +131,37 @@ const Chambres = () => {
         return;
       }
 
-      flash.showSuccess('Réservation créée', 'Votre réservation a été créée avec succès !');
+      // Créer la session Stripe avec les bonnes URLs
+      const stripeResponse = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          bookingId: data.id,
+          amount: calculateTotal(),
+          roomName: selectedRoom.name,
+          successUrl: `${window.location.origin}/success?booking_id=${data.id}`,
+          cancelUrl: `${window.location.origin}/chambres`
+        }),
+      });
 
-      setShowBookingModal(false);
-      setSelectedRoom(null);
-      
-      // Simulation du processus de paiement Stripe
-      flash.showInfo('Paiement', `Redirection vers Stripe pour le paiement de ${calculateTotal()}€`);
-      
+      if (!stripeResponse.ok) {
+        throw new Error('Erreur lors de la création de la session Stripe');
+      }
+
+      const { url } = await stripeResponse.json();
+
+      if (url) {
+        // Redirection vers Stripe
+        window.location.href = url;
+      } else {
+        throw new Error('URL de redirection Stripe manquante');
+      }
+
     } catch (error) {
-      console.error('Erreur lors de la réservation:', error);
-      flash.showError('Erreur', 'Une erreur est survenue lors de la réservation');
+      console.error('Erreur lors du paiement:', error);
+      flash.showError('Erreur', 'Une erreur est survenue lors du paiement');
     }
   };
 
@@ -293,11 +314,10 @@ const Chambres = () => {
                     whileTap={{ scale: 0.95 }}
                     onClick={() => handleBooking(room)}
                     disabled={!room.available}
-                    className={`w-full py-3 px-4 rounded-lg font-semibold transition-colors ${
-                      room.available
+                    className={`w-full py-3 px-4 rounded-lg font-semibold transition-colors ${room.available
                         ? 'bg-gold-500 hover:bg-gold-600 text-luxury-900'
                         : 'bg-gray-500 text-gray-300 cursor-not-allowed'
-                    }`}
+                      }`}
                   >
                     {room.available ? 'Réserver Maintenant' : 'Indisponible'}
                   </motion.button>
@@ -362,7 +382,7 @@ const Chambres = () => {
                     </label>
                     <select
                       value={bookingData.duration}
-                      onChange={(e) => setBookingData({...bookingData, duration: e.target.value})}
+                      onChange={(e) => setBookingData({ ...bookingData, duration: e.target.value })}
                       className="w-full bg-luxury-700 border border-gold-500/30 rounded-lg px-4 py-2 text-white"
                     >
                       <option value="night">1 Nuit - {selectedRoom.price_night}€</option>
@@ -379,7 +399,7 @@ const Chambres = () => {
                     <input
                       type="date"
                       value={bookingData.checkIn}
-                      onChange={(e) => setBookingData({...bookingData, checkIn: e.target.value})}
+                      onChange={(e) => setBookingData({ ...bookingData, checkIn: e.target.value })}
                       min={new Date().toISOString().split('T')[0]}
                       className="w-full bg-luxury-700 border border-gold-500/30 rounded-lg px-4 py-2 text-white"
                     />
@@ -391,7 +411,7 @@ const Chambres = () => {
                     </label>
                     <select
                       value={bookingData.guests}
-                      onChange={(e) => setBookingData({...bookingData, guests: parseInt(e.target.value)})}
+                      onChange={(e) => setBookingData({ ...bookingData, guests: parseInt(e.target.value) })}
                       className="w-full bg-luxury-700 border border-gold-500/30 rounded-lg px-4 py-2 text-white"
                     >
                       {[...Array(selectedRoom.beds)].map((_, i) => (
