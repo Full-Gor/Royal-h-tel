@@ -8,7 +8,7 @@ const Histoire = () => {
       id: 'casino',
       title: 'Salle de Jeu Royale',
       description: 'Plongez dans l\'atmosphère feutrée de notre casino privé, où l\'élégance rencontre l\'excitation. Tables de poker, roulette et machines à sous dans un cadre digne des plus grands palaces.',
-      videoUrl: 'https://videos.pexels.com/video-files/6913102/6913102-uhd_2560_1440_30fps.mp4',
+      videoUrl: 'https://videos.pexels.com/video-files/7607945/7607945-uhd_2560_1440_25fps.mp4',
       fallbackImage: 'https://images.pexels.com/photos/1871508/pexels-photo-1871508.jpeg?auto=compress&cs=tinysrgb&w=800',
       icon: Sparkles
     },
@@ -16,7 +16,7 @@ const Histoire = () => {
       id: 'spa',
       title: 'Spa & Wellness',
       description: 'Détendez-vous dans notre spa de luxe avec piscine chauffée, sauna finlandais, hammam traditionnel, jacuzzi et massages thaïlandais authentiques par nos thérapeutes certifiés.',
-      videoUrl: 'https://videos.pexels.com/video-files/6551045/6551045-uhd_2560_1440_30fps.mp4',
+      videoUrl: 'https://videos.pexels.com/video-files/6616372/6616372-hd_1920_1080_25fps.mp4',
       fallbackImage: 'https://images.pexels.com/photos/3757942/pexels-photo-3757942.jpeg?auto=compress&cs=tinysrgb&w=800',
       icon: Dumbbell
     },
@@ -32,7 +32,7 @@ const Histoire = () => {
       id: 'voiturier',
       title: 'Service de Voiturier',
       description: 'Notre équipe de voituriers s\'occupe de vos véhicules de prestige avec le plus grand soin. Parking sécurisé et service de nettoyage disponible.',
-      videoUrl: 'https://videos.pexels.com/video-files/4874740/4874740-uhd_2560_1440_30fps.mp4',
+      videoUrl: 'https://videos.pexels.com/video-files/5098925/5098925-hd_1920_1080_30fps.mp4',
       fallbackImage: 'https://images.pexels.com/photos/1592384/pexels-photo-1592384.jpeg?auto=compress&cs=tinysrgb&w=800',
       icon: Car
     }
@@ -132,23 +132,11 @@ const Histoire = () => {
                 transition={{ duration: 0.8 }}
                 className="lg:w-1/2"
               >
-                {/* Remplacer la vidéo spa par une image d'homme */}
-                {section.id === 'spa' ? (
-                  <div className="relative rounded-2xl overflow-hidden shadow-2xl">
-                    <img
-                      src="https://images.pexels.com/photos/3757942/pexels-photo-3757942.jpeg?auto=compress&cs=tinysrgb&w=800"
-                      alt="Spa masculin"
-                      className="w-full h-80 object-cover"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-luxury-900/50 to-transparent"></div>
-                  </div>
-                ) : (
-                  <VideoComponent
-                    videoUrl={section.videoUrl}
-                    fallbackImage={section.fallbackImage}
-                    alt={section.title}
-                  />
-                )}
+                <VideoComponent
+                  videoUrl={section.videoUrl}
+                  fallbackImage={section.fallbackImage}
+                  alt={section.title}
+                />
               </motion.div>
 
               <motion.div
