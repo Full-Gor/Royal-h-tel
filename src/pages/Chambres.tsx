@@ -39,14 +39,8 @@ const Chambres = () => {
   });
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/login');
-      flash.showWarning('Accès restreint', 'Veuillez vous connecter pour accéder aux chambres');
-      return;
-    }
-
     loadRooms();
-  }, [isAuthenticated, navigate, flash]);
+  }, []);
 
   const loadRooms = async () => {
     try {
@@ -164,10 +158,6 @@ const Chambres = () => {
       flash.showError('Erreur', 'Une erreur est survenue lors du paiement');
     }
   };
-
-  if (!isAuthenticated) {
-    return null;
-  }
 
   if (loading) {
     return (
@@ -309,18 +299,28 @@ const Chambres = () => {
                   </div>
 
                   {/* Booking Button */}
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => handleBooking(room)}
-                    disabled={!room.available}
-                    className={`w-full py-3 px-4 rounded-lg font-semibold transition-colors ${room.available
+                  {isAuthenticated ? (
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => handleBooking(room)}
+                      disabled={!room.available}
+                      className={`w-full py-3 px-4 rounded-lg font-semibold transition-colors ${room.available
                         ? 'bg-gold-500 hover:bg-gold-600 text-luxury-900'
                         : 'bg-gray-500 text-gray-300 cursor-not-allowed'
-                      }`}
-                  >
-                    {room.available ? 'Réserver Maintenant' : 'Indisponible'}
-                  </motion.button>
+                        }`}
+                    >
+                      {room.available ? 'Réserver Maintenant' : 'Indisponible'}
+                    </motion.button>
+                  ) : (
+                    <button
+                      disabled
+                      className="w-full py-3 px-4 rounded-lg font-semibold bg-gray-500 text-gray-300 cursor-not-allowed"
+                      title="Connectez-vous pour réserver"
+                    >
+                      Connectez-vous pour réserver
+                    </button>
+                  )}
                 </div>
               </motion.div>
             ))}

@@ -24,7 +24,7 @@ const Navbar = () => {
   const navItems = [
     { name: 'Accueil', path: '/' },
     { name: 'Histoire', path: '/histoire' },
-    ...(isAuthenticated ? [{ name: 'Chambres', path: '/chambres' }] : []),
+    { name: 'Chambres', path: '/chambres' },
     { name: 'Menu', path: '/menu', icon: ChefHat },
     { name: 'Contact', path: '/contact' },
     ...(isAdmin ? [{ name: 'Admin', path: '/admin' }] : [])
@@ -34,11 +34,10 @@ const Navbar = () => {
     <motion.nav
       initial={{ y: -100 }}
       animate={{ y: 0 }}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        isScrolled || !isHomePage
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${isScrolled || !isHomePage
           ? 'bg-luxury-900/95 backdrop-blur-md shadow-2xl'
           : 'bg-transparent'
-      }`}
+        }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
@@ -59,11 +58,10 @@ const Navbar = () => {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`relative px-3 py-2 text-sm font-medium transition-colors duration-200 flex items-center ${
-                  location.pathname === item.path
+                className={`relative px-3 py-2 text-sm font-medium transition-colors duration-200 flex items-center ${location.pathname === item.path
                     ? 'text-gold-400'
                     : 'text-white hover:text-gold-300'
-                }`}
+                  }`}
               >
                 {item.icon && <item.icon className="h-4 w-4 mr-2" />}
                 {item.name}
