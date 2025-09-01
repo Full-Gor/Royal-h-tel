@@ -1,7 +1,7 @@
 // /api/create-checkout.js
-import Stripe from 'stripe';
+const Stripe = require('stripe');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
     apiVersion: '2023-08-16'
   });
