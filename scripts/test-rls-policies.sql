@@ -5,29 +5,40 @@
 -- TEST 1: Vérification que RLS est activé
 -- =====================================================
 
-SELECT 
-  schemaname,
-  tablename,
-  rowsecurity
-FROM pg_tables 
-WHERE schemaname = 'public' 
-  AND tablename IN ('profiles', 'rooms', 'bookings', 'contact_messages', 'room_categories', 'menu_categories', 'menu_items', 'legal_pages');
+SELECT
+    schemaname,
+    tablename,
+    rowsecurity
+FROM pg_tables
+WHERE
+    schemaname = 'public'
+    AND tablename IN (
+        'profiles',
+        'rooms',
+        'bookings',
+        'contact_messages',
+        'room_categories',
+        'menu_categories',
+        'menu_items',
+        'legal_pages'
+    );
 
 -- =====================================================
 -- TEST 2: Vérification des politiques existantes
 -- =====================================================
 
-SELECT 
-  schemaname,
-  tablename,
-  policyname,
-  permissive,
-  roles,
-  cmd,
-  qual,
-  with_check
-FROM pg_policies 
-WHERE schemaname = 'public'
+SELECT
+    schemaname,
+    tablename,
+    policyname,
+    permissive,
+    roles,
+    cmd,
+    qual,
+    with_check
+FROM pg_policies
+WHERE
+    schemaname = 'public'
 ORDER BY tablename, policyname;
 
 -- =====================================================
@@ -84,20 +95,22 @@ ORDER BY tablename, policyname;
 -- =====================================================
 
 -- Vérifier que le trigger de création de profil existe
-SELECT 
-  trigger_name,
-  event_manipulation,
-  action_statement
-FROM information_schema.triggers 
-WHERE trigger_name = 'on_auth_user_created';
+SELECT
+    trigger_name,
+    event_manipulation,
+    action_statement
+FROM information_schema.triggers
+WHERE
+    trigger_name = 'on_auth_user_created';
 
 -- Vérifier que la fonction handle_new_user existe
-SELECT 
-  routine_name,
-  routine_type,
-  security_type
-FROM information_schema.routines 
-WHERE routine_name = 'handle_new_user';
+SELECT
+    routine_name,
+    routine_type,
+    security_type
+FROM information_schema.routines
+WHERE
+    routine_name = 'handle_new_user';
 
 -- =====================================================
 -- RÉSULTATS ATTENDUS
@@ -109,9 +122,9 @@ Résultats attendus pour un site sécurisé :
 1. Toutes les tables doivent avoir rowsecurity = true
 2. Chaque table doit avoir au moins une politique RLS
 3. Les politiques doivent être restrictives :
-   - Utilisateurs : accès uniquement à leurs données
-   - Admins : accès complet
-   - Messages de contact : création publique, lecture admin uniquement
+- Utilisateurs : accès uniquement à leurs données
+- Admins : accès complet
+- Messages de contact : création publique, lecture admin uniquement
 4. Le trigger on_auth_user_created doit exister
 5. La fonction handle_new_user doit exister avec SECURITY DEFINER
 */
@@ -124,12 +137,12 @@ Résultats attendus pour un site sécurisé :
 Si des problèmes sont détectés :
 
 1. Vérifier que toutes les tables ont RLS activé :
-   ALTER TABLE nom_table ENABLE ROW LEVEL SECURITY;
+ALTER TABLE nom_table ENABLE ROW LEVEL SECURITY;
 
 2. Créer des politiques manquantes selon le modèle :
-   CREATE POLICY "nom_politique" ON table
-   FOR operation TO authenticated
-   USING (condition);
+CREATE POLICY "nom_politique" ON table
+FOR operation TO authenticated
+USING (condition);
 
 3. Tester avec différents utilisateurs (normal vs admin)
 
