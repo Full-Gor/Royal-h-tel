@@ -3,7 +3,21 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://your-project.supabase.co';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'your-anon-key';
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    // Configuration de sécurité avancée
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true,
+    flowType: 'pkce', // Authorization Code Flow avec PKCE
+    debug: import.meta.env.DEV,
+    cookieOptions: {
+      secure: import.meta.env.PROD,
+      sameSite: 'lax',
+      httpOnly: true
+    }
+  }
+});
 
 // Types pour TypeScript
 export interface Profile {

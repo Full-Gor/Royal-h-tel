@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useFlash } from './FlashContext';
 import { supabase } from '../lib/supabase';
+import { monitorSession, cleanupSession, checkConnectionSecurity } from '../lib/authMiddleware';
+import { logAuthEvent } from '../lib/auditService';
 
 // Types
 interface User {
@@ -40,6 +42,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const flash = useFlash();
 
   useEffect(() => {
+    // Vérifier la sécurité de la connexion
+    checkConnectionSecurity();
+
     // Vérifier la session existante
     const initAuth = async () => {
       try {
@@ -60,27 +65,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Écouter les changements d'authentification
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth state change:', event, session?.user?.email);
-      
+
+      if (event === 'TOKEN_REFRESHED') {
+        console.log('✅ Token rafraîchi avec succès');
+        logAuthEvent('TOKEN_REFRESHED', true);
+      }
+
       if (session?.user) {
         await loadUserProfile(session.user);
         if (event === 'SIGNED_IN') {
+          logAuthEvent('SIGNED_IN', true);
           flash.showSuccess('Connexion réussie', 'Bienvenue dans votre espace royal !');
         }
       } else {
         setUser(null);
         if (event === 'SIGNED_OUT') {
+          logAuthEvent('SIGNED_OUT', true);
+          cleanupSession(); // Nettoyer les données sensibles
           flash.showInfo('Déconnexion', 'À bientôt au Château Royal !');
         }
       }
     });
 
-    return () => subscription.unsubscribe();
+    // Démarrer le monitoring des sessions
+    const sessionMonitor = monitorSession();
+
+    return () => {
+      subscription.unsubscribe();
+      clearInterval(sessionMonitor);
+    };
   }, [flash]);
 
   const loadUserProfile = async (authUser: any) => {
     try {
       console.log('Profil utilisateur chargé:', authUser.email);
-      
+
       const { data: profile, error } = await supabase
         .from('profiles')
         .select('*')
@@ -89,7 +108,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error && error.code !== 'PGRST116') {
         console.error('Erreur lors du chargement du profil:', error);
-        
+
         // Si le profil n'existe pas, le créer
         if (error.code === 'PGRST116') {
           const { error: insertError } = await supabase
@@ -148,6 +167,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) {
         console.error('Erreur de connexion:', error);
+        logAuthEvent('LOGIN_FAILED', false, error.message);
         flash.showError('Erreur de connexion', 'Email ou mot de passe incorrect');
         return false;
       }

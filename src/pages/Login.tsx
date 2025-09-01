@@ -1,9 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Crown, Mail, Lock, User, Phone, Eye, EyeOff, Loader } from 'lucide-react';
+import { Crown, Mail, Lock, User, Phone, Eye, EyeOff, Loader, RefreshCw, Shield } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useFlash } from '../contexts/FlashContext';
+import { validatePassword, generateSecurePassword } from '../lib/passwordValidation';
+import PasswordStrengthMeter from '../components/PasswordStrengthMeter';
+
 
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -16,21 +19,53 @@ const Login = () => {
     phone: ''
   });
   const [loading, setLoading] = useState(false);
+  const [passwordValidation, setPasswordValidation] = useState<any>(null);
+  const [showPasswordGenerator, setShowPasswordGenerator] = useState(false);
 
   const { login, register } = useAuth();
   const navigate = useNavigate();
   const flash = useFlash();
 
+  // Réinitialiser la validation quand on change de mode
+  useEffect(() => {
+    setPasswordValidation(null);
+    setShowPasswordGenerator(false);
+  }, [isLogin]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-    // Protection contre les injections
-    const sanitizedValue = value.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+    // Protection renforcée contre XSS
+    let sanitizedValue = value
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+      .replace(/javascript:/gi, '')
+      .replace(/on\w+\s*=/gi, '')
+      .replace(/<[^>]*>/g, '')
+      .trim();
+
+    // Limiter la longueur selon le champ
+    const maxLengths: Record<string, number> = {
+      email: 254,
+      firstName: 50,
+      lastName: 50,
+      phone: 20,
+      password: 128
+    };
+
+    if (maxLengths[name]) {
+      sanitizedValue = sanitizedValue.substring(0, maxLengths[name]);
+    }
 
     setFormData(prev => ({
       ...prev,
       [name]: sanitizedValue
     }));
+
+    // Validation en temps réel du mot de passe
+    if (name === 'password' && !isLogin) {
+      const validation = validatePassword(sanitizedValue);
+      setPasswordValidation(validation);
+    }
   };
 
   const validateForm = () => {
@@ -45,9 +80,19 @@ const Login = () => {
       return false;
     }
 
-    if (formData.password.length < 6) {
-      flash.showError('Validation', 'Le mot de passe doit contenir au moins 6 caractères');
-      return false;
+    // Validation stricte du mot de passe pour l'inscription
+    if (!isLogin) {
+      const validation = validatePassword(formData.password);
+      if (!validation.isValid) {
+        flash.showError('Validation', 'Le mot de passe ne respecte pas les exigences de sécurité');
+        return false;
+      }
+    } else {
+      // Validation basique pour la connexion
+      if (formData.password.length < 6) {
+        flash.showError('Validation', 'Le mot de passe doit contenir au moins 6 caractères');
+        return false;
+      }
     }
 
     if (!isLogin) {
@@ -58,6 +103,18 @@ const Login = () => {
     }
 
     return true;
+  };
+
+  const handleGeneratePassword = () => {
+    const securePassword = generateSecurePassword(16);
+    setFormData(prev => ({
+      ...prev,
+      password: securePassword
+    }));
+    const validation = validatePassword(securePassword);
+    setPasswordValidation(validation);
+    setShowPasswordGenerator(false);
+    flash.showSuccess('Mot de passe généré', 'Un mot de passe sécurisé a été généré pour vous');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -195,18 +252,61 @@ const Login = () => {
                     type={showPassword ? 'text' : 'password'}
                     value={formData.password}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-12 py-3 bg-luxury-700/50 border border-gold-500/30 rounded-lg text-white placeholder-gold-300 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-transparent transition-all"
+                    className="w-full pl-10 pr-20 py-3 bg-luxury-700/50 border border-gold-500/30 rounded-lg text-white placeholder-gold-300 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-transparent transition-all"
                     placeholder="Mot de passe"
                     required
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-3 text-gold-400 hover:text-gold-300 transition-colors"
-                  >
-                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                  </button>
+                  <div className="absolute right-3 top-3 flex space-x-1">
+                    {!isLogin && (
+                      <button
+                        type="button"
+                        onClick={() => setShowPasswordGenerator(!showPasswordGenerator)}
+                        className="text-gold-400 hover:text-gold-300 transition-colors"
+                        title="Générer un mot de passe sécurisé"
+                      >
+                        <Sparkles className="h-5 w-5" />
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="text-gold-400 hover:text-gold-300 transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    </button>
+                  </div>
                 </div>
+
+                {/* Générateur de mot de passe */}
+                {!isLogin && showPasswordGenerator && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="mt-3 p-3 bg-luxury-700/30 border border-gold-500/20 rounded-lg"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm text-gold-200">Générer un mot de passe sécurisé</span>
+                      <button
+                        type="button"
+                        onClick={handleGeneratePassword}
+                        className="text-xs bg-gold-500 hover:bg-gold-600 text-luxury-900 px-2 py-1 rounded transition-colors"
+                      >
+                        Générer
+                      </button>
+                    </div>
+                    <p className="text-xs text-gold-300">
+                      Cliquez sur "Générer" pour créer un mot de passe qui respecte toutes les exigences de sécurité.
+                    </p>
+                  </motion.div>
+                )}
+
+                {/* Indicateur de force du mot de passe */}
+                {!isLogin && passwordValidation && (
+                  <div className="mt-3">
+                    <PasswordStrengthMeter validation={passwordValidation} />
+                  </div>
+                )}
               </div>
             </div>
 

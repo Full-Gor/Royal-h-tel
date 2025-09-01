@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Phone, MapPin, Send, Crown, MessageCircle, Clock, Loader } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, Crown, MessageCircle, Clock, Loader, Shield, AlertTriangle } from 'lucide-react';
 import { useFlash } from '../contexts/FlashContext';
 import { supabase } from '../lib/supabase';
+import { formSecurityService, DEFAULT_FORM_SECURITY_CONFIG } from '../lib/formSecurity';
+import HoneypotField from '../components/HoneypotField';
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -15,13 +17,39 @@ const Contact = () => {
   });
   const [loading, setLoading] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [csrfToken, setCsrfToken] = useState('');
+  const [securityError, setSecurityError] = useState('');
   const flash = useFlash();
+
+  // Initialiser le token CSRF
+  useEffect(() => {
+    const token = formSecurityService.generateCSRFToken('contact-form');
+    setCsrfToken(token);
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
 
-    // Protection contre les injections
-    const sanitizedValue = value.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+    // Protection renforcée contre XSS
+    let sanitizedValue = value
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+      .replace(/javascript:/gi, '')
+      .replace(/on\w+\s*=/gi, '')
+      .replace(/<[^>]*>/g, '')
+      .trim();
+
+    // Limiter la longueur selon le champ
+    const maxLengths: Record<string, number> = {
+      name: 100,
+      email: 254,
+      phone: 20,
+      subject: 200,
+      message: 2000
+    };
+
+    if (maxLengths[name]) {
+      sanitizedValue = sanitizedValue.substring(0, maxLengths[name]);
+    }
 
     setFormData(prev => ({
       ...prev,
@@ -75,8 +103,43 @@ const Contact = () => {
     e.preventDefault();
     setLoading(true);
     setShowSuccessMessage(false);
+    setSecurityError('');
 
     try {
+      // Récupérer les données du formulaire
+      const form = e.target as HTMLFormElement;
+      const formDataObj = new FormData(form);
+
+      // Vérifier le honeypot
+      const honeypotValue = formDataObj.get('website') as string;
+      if (honeypotValue && honeypotValue.trim() !== '') {
+        setSecurityError('Soumission détectée comme spam');
+        flash.showError('Sécurité', 'Soumission détectée comme spam');
+        return;
+      }
+
+      // Vérifier le token CSRF
+      const submittedToken = formDataObj.get('csrf_token') as string;
+      if (!formSecurityService.validateCSRFToken('contact-form', submittedToken)) {
+        setSecurityError('Token de sécurité invalide');
+        flash.showError('Sécurité', 'Token de sécurité invalide');
+        return;
+      }
+
+      // Vérifier le rate limiting
+      const identifier = 'contact-form'; // En production, utiliser l'IP ou l'ID utilisateur
+      const rateLimitCheck = await formSecurityService.checkRateLimit(
+        'contact-form',
+        identifier,
+        DEFAULT_FORM_SECURITY_CONFIG
+      );
+
+      if (!rateLimitCheck.allowed) {
+        setSecurityError(rateLimitCheck.reason || 'Limite de soumission dépassée');
+        flash.showError('Sécurité', rateLimitCheck.reason || 'Limite de soumission dépassée');
+        return;
+      }
+
       // Validation
       if (!formData.name || !formData.email || !formData.subject || !formData.message) {
         flash.showError('Validation', 'Veuillez remplir tous les champs obligatoires');
@@ -89,6 +152,33 @@ const Contact = () => {
         flash.showError('Validation', 'Veuillez entrer une adresse email valide');
         return;
       }
+
+      // Nettoyer et valider les données
+      const allowedFields = ['name', 'email', 'phone', 'subject', 'message', 'contactMethod'];
+      const sanitizedData = formSecurityService.sanitizeFormData(formData, allowedFields);
+
+      // Créer l'objet de soumission pour la sécurité
+      const submission = {
+        formId: 'contact-form',
+        userId: undefined, // En production, utiliser l'ID utilisateur si connecté
+        ipAddress: 'unknown', // En production, récupérer l'IP réelle
+        userAgent: navigator.userAgent,
+        timestamp: new Date(),
+        data: sanitizedData,
+        csrfToken: submittedToken
+      };
+
+      // Détecter le spam
+      const spamResult = formSecurityService.detectSpam(submission);
+      if (spamResult.isSpam) {
+        await formSecurityService.logSpamAttempt(submission, spamResult);
+        setSecurityError('Message détecté comme spam');
+        flash.showError('Sécurité', 'Message détecté comme spam');
+        return;
+      }
+
+      // Enregistrer la soumission
+      formSecurityService.recordSubmission(submission);
 
       // Enregistrer le message dans Supabase
       const { error } = await supabase
@@ -209,7 +299,20 @@ const Contact = () => {
               Envoyez-nous un message
             </h2>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6 relative">
+              {/* Champs de sécurité */}
+              <HoneypotField name="website" />
+              <input type="hidden" name="csrf_token" value={csrfToken} />
+
+              {/* Message d'erreur de sécurité */}
+              {securityError && (
+                <div className="p-3 bg-red-500/20 border border-red-500/30 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <AlertTriangle className="h-4 w-4 text-red-400" />
+                    <span className="text-red-400 text-sm">{securityError}</span>
+                  </div>
+                </div>
+              )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-gold-200 text-sm font-medium mb-2">

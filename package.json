@@ -5,9 +5,19 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
+    "build": "tsc && vite build",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "preview": "vite preview",
+    "update-deps": "node scripts/update-dependencies.js",
+    "security-audit": "npm audit && npm audit fix",
+    "security-check": "npm audit --audit-level=moderate",
+    "update-critical": "npm install supabase@latest @supabase/supabase-js@latest stripe@latest @stripe/stripe-js@latest",
+    "test-security": "npm run security-audit && npm run build",
+    "backup-config": "cp package.json package.json.backup.$(date +%Y%m%d_%H%M%S) && cp package-lock.json package-lock.json.backup.$(date +%Y%m%d_%H%M%S)",
+    "restore-config": "echo 'Restore from backup if needed'",
+    "monitor-deps": "npm outdated",
+    "clean-install": "rm -rf node_modules package-lock.json && npm install",
+    "security-report": "npm audit --json > security-report-$(date +%Y%m%d).json"
   },
   "dependencies": {
     "lucide-react": "^0.344.0",

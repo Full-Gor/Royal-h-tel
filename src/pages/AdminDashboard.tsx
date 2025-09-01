@@ -3,12 +3,12 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import { useFlash } from '../contexts/FlashContext';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Crown, 
-  Users, 
-  Bed, 
-  TrendingUp, 
-  Calendar, 
+import {
+  Crown,
+  Users,
+  Bed,
+  TrendingUp,
+  Calendar,
   Euro,
   Settings,
   Plus,
@@ -23,8 +23,10 @@ import {
   X,
   Mail,
   Phone,
-  Clock
+  Clock,
+  Shield
 } from 'lucide-react';
+import SecurityAlerts from '../components/SecurityAlerts';
 
 // Import conditionnel selon le mode
 const isMySQLMode = import.meta.env.VITE_SITE_MODE === 'mysql';
@@ -149,7 +151,7 @@ const AdminDashboard = () => {
 
       if (isMySQLMode) {
         const { DatabaseService } = await import('../lib/database');
-        
+
         // Charger toutes les données
         const [roomsData, usersData, bookingsData, messagesData, statsData] = await Promise.all([
           DatabaseService.getAllRooms(),
@@ -170,7 +172,7 @@ const AdminDashboard = () => {
 
       } else {
         const { supabase } = await import('../lib/supabase');
-        
+
         // Charger les chambres
         const { data: roomsData, error: roomsError } = await supabase
           .from('rooms')
@@ -278,7 +280,7 @@ const AdminDashboard = () => {
           .from('room_categories')
           .select('*')
           .order('name');
-        
+
         if (!error) {
           setCategories(data || []);
         }
@@ -310,7 +312,7 @@ const AdminDashboard = () => {
         }
       }
 
-      setRooms(prev => prev.map(room => 
+      setRooms(prev => prev.map(room =>
         room.id === roomId ? { ...room, available: !room.available } : room
       ));
 
@@ -407,19 +409,19 @@ const AdminDashboard = () => {
         }
       } else {
         const { supabase } = await import('../lib/supabase');
-        
+
         if (editingRoom) {
           const { error } = await supabase
             .from('rooms')
             .update(roomData)
             .eq('id', editingRoom.id);
-          
+
           if (error) throw error;
         } else {
           const { error } = await supabase
             .from('rooms')
             .insert([roomData]);
-          
+
           if (error) throw error;
         }
       }
@@ -428,7 +430,7 @@ const AdminDashboard = () => {
         editingRoom ? 'Chambre modifiée' : 'Chambre créée',
         'Les modifications ont été sauvegardées'
       );
-      
+
       setShowRoomModal(false);
       loadData();
     } catch (error) {
@@ -451,7 +453,7 @@ const AdminDashboard = () => {
           .from('rooms')
           .delete()
           .eq('id', roomId);
-        
+
         if (error) throw error;
       }
 
@@ -506,7 +508,7 @@ const AdminDashboard = () => {
             .eq('id', message.id);
         }
 
-        setMessages(prev => prev.map(m => 
+        setMessages(prev => prev.map(m =>
           m.id === message.id ? { ...m, status: 'read' } : m
         ));
       } catch (error) {
@@ -530,11 +532,11 @@ const AdminDashboard = () => {
           .from('bookings')
           .update({ status })
           .eq('id', bookingId);
-        
+
         if (error) throw error;
       }
 
-      setBookings(prev => prev.map(booking => 
+      setBookings(prev => prev.map(booking =>
         booking.id === bookingId ? { ...booking, status } : booking
       ));
 
@@ -542,6 +544,39 @@ const AdminDashboard = () => {
     } catch (error) {
       console.error('Erreur lors de la mise à jour:', error);
       flash.showError('Erreur', 'Impossible de mettre à jour le statut');
+    }
+  };
+
+  const handleDeleteMessage = async (messageId: string) => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce message ?')) return;
+
+    try {
+      if (isMySQLMode) {
+        const { getConnection } = await import('../lib/database');
+        const connection = await getConnection();
+        await connection.execute('DELETE FROM contact_messages WHERE id = ?', [messageId]);
+      } else {
+        const { supabase } = await import('../lib/supabase');
+        const { error } = await supabase
+          .from('contact_messages')
+          .delete()
+          .eq('id', messageId);
+
+        if (error) throw error;
+      }
+
+      setMessages(prev => prev.filter(message => message.id !== messageId));
+
+      // Mettre à jour les stats
+      setStats(prev => ({
+        ...prev,
+        newMessages: messages.filter(m => m.status === 'new' && m.id !== messageId).length
+      }));
+
+      flash.showSuccess('Message supprimé', 'Le message a été supprimé avec succès');
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error);
+      flash.showError('Erreur', 'Impossible de supprimer le message');
     }
   };
 
@@ -566,6 +601,7 @@ const AdminDashboard = () => {
     { id: 'bookings', name: 'Réservations', icon: Calendar },
     { id: 'users', name: 'Utilisateurs', icon: Users },
     { id: 'messages', name: 'Messages', icon: MessageCircle, badge: stats.newMessages },
+    { id: 'security', name: 'Sécurité', icon: Shield },
     { id: 'settings', name: 'Paramètres', icon: Settings }
   ];
 
@@ -624,11 +660,10 @@ const AdminDashboard = () => {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`w-full flex items-center px-4 py-3 rounded-lg transition-colors relative ${
-                      activeTab === tab.id
-                        ? 'bg-gold-500 text-luxury-900'
-                        : 'text-gold-200 hover:bg-gold-500/20'
-                    }`}
+                    className={`w-full flex items-center px-4 py-3 rounded-lg transition-colors relative ${activeTab === tab.id
+                      ? 'bg-gold-500 text-luxury-900'
+                      : 'text-gold-200 hover:bg-gold-500/20'
+                      }`}
                   >
                     <tab.icon className="h-5 w-5 mr-3" />
                     {tab.name}
@@ -699,11 +734,10 @@ const AdminDashboard = () => {
                         </div>
                         <div className="text-right">
                           <p className="text-gold-500 font-bold">{booking.total_amount}€</p>
-                          <span className={`text-xs px-2 py-1 rounded-full ${
-                            booking.status === 'confirmed' ? 'bg-green-500/20 text-green-400' :
+                          <span className={`text-xs px-2 py-1 rounded-full ${booking.status === 'confirmed' ? 'bg-green-500/20 text-green-400' :
                             booking.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' :
-                            'bg-red-500/20 text-red-400'
-                          }`}>
+                              'bg-red-500/20 text-red-400'
+                            }`}>
                             {booking.status}
                           </span>
                         </div>
@@ -721,7 +755,7 @@ const AdminDashboard = () => {
                   <h2 className="text-2xl font-serif font-bold text-white">
                     Gestion des Chambres
                   </h2>
-                  <button 
+                  <button
                     onClick={handleCreateRoom}
                     className="bg-gold-500 hover:bg-gold-600 text-luxury-900 px-4 py-2 rounded-lg font-semibold flex items-center"
                   >
@@ -750,31 +784,30 @@ const AdminDashboard = () => {
                             <td className="px-6 py-4 text-gold-200">{room.category_name}</td>
                             <td className="px-6 py-4 text-white">{room.price_night}€</td>
                             <td className="px-6 py-4">
-                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                room.available 
-                                  ? 'bg-green-500/20 text-green-400'
-                                  : 'bg-red-500/20 text-red-400'
-                              }`}>
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${room.available
+                                ? 'bg-green-500/20 text-green-400'
+                                : 'bg-red-500/20 text-red-400'
+                                }`}>
                                 {room.available ? 'Disponible' : 'Indisponible'}
                               </span>
                             </td>
                             <td className="px-6 py-4 text-gold-200">{room.total_reservations}</td>
                             <td className="px-6 py-4">
                               <div className="flex space-x-2">
-                                <button 
+                                <button
                                   onClick={() => toggleRoomAvailability(room.id)}
                                   className="text-gold-400 hover:text-gold-300"
                                   title="Changer la disponibilité"
                                 >
                                   <Eye className="h-4 w-4" />
                                 </button>
-                                <button 
+                                <button
                                   onClick={() => handleEditRoom(room)}
                                   className="text-blue-400 hover:text-blue-300"
                                 >
                                   <Edit className="h-4 w-4" />
                                 </button>
-                                <button 
+                                <button
                                   onClick={() => handleDeleteRoom(room.id)}
                                   className="text-red-400 hover:text-red-300"
                                 >
@@ -835,11 +868,10 @@ const AdminDashboard = () => {
                               </select>
                             </td>
                             <td className="px-6 py-4">
-                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                booking.payment_status === 'paid' ? 'bg-green-500/20 text-green-400' :
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${booking.payment_status === 'paid' ? 'bg-green-500/20 text-green-400' :
                                 booking.payment_status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' :
-                                'bg-red-500/20 text-red-400'
-                              }`}>
+                                  'bg-red-500/20 text-red-400'
+                                }`}>
                                 {booking.payment_status}
                               </span>
                             </td>
@@ -882,18 +914,17 @@ const AdminDashboard = () => {
                               {new Date(user.created_at).toLocaleDateString()}
                             </td>
                             <td className="px-6 py-4">
-                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                user.is_admin 
-                                  ? 'bg-gold-500/20 text-gold-400'
-                                  : 'bg-blue-500/20 text-blue-400'
-                              }`}>
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.is_admin
+                                ? 'bg-gold-500/20 text-gold-400'
+                                : 'bg-blue-500/20 text-blue-400'
+                                }`}>
                                 {user.is_admin ? 'Admin' : 'Utilisateur'}
                               </span>
                             </td>
                             <td className="px-6 py-4">
                               <div className="flex space-x-2">
                                 {!user.is_admin && (
-                                  <button 
+                                  <button
                                     onClick={() => handleDeleteUser(user.id)}
                                     className="text-red-400 hover:text-red-300"
                                   >
@@ -922,25 +953,22 @@ const AdminDashboard = () => {
                   {messages.map((message) => (
                     <div
                       key={message.id}
-                      className={`bg-luxury-800/50 backdrop-blur-sm rounded-xl p-6 border cursor-pointer transition-colors ${
-                        message.status === 'new' 
-                          ? 'border-gold-500/50 bg-gold-500/5' 
-                          : 'border-gold-500/20'
-                      }`}
-                      onClick={() => handleViewMessage(message)}
+                      className={`bg-luxury-800/50 backdrop-blur-sm rounded-xl p-6 border transition-colors ${message.status === 'new'
+                        ? 'border-gold-500/50 bg-gold-500/5'
+                        : 'border-gold-500/20'
+                        }`}
                     >
                       <div className="flex justify-between items-start">
-                        <div className="flex-1">
+                        <div className="flex-1 cursor-pointer" onClick={() => handleViewMessage(message)}>
                           <div className="flex items-center gap-3 mb-2">
                             <h3 className="text-lg font-semibold text-white">
                               {message.name}
                             </h3>
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              message.status === 'new' ? 'bg-green-500/20 text-green-400' :
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${message.status === 'new' ? 'bg-green-500/20 text-green-400' :
                               message.status === 'read' ? 'bg-blue-500/20 text-blue-400' :
-                              message.status === 'replied' ? 'bg-purple-500/20 text-purple-400' :
-                              'bg-gray-500/20 text-gray-400'
-                            }`}>
+                                message.status === 'replied' ? 'bg-purple-500/20 text-purple-400' :
+                                  'bg-gray-500/20 text-gray-400'
+                              }`}>
                               {message.status}
                             </span>
                           </div>
@@ -965,6 +993,18 @@ const AdminDashboard = () => {
                             </span>
                           </div>
                         </div>
+                        <div className="ml-4">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteMessage(message.id);
+                            }}
+                            className="text-red-400 hover:text-red-300 p-2 rounded-lg hover:bg-red-500/10 transition-colors"
+                            title="Supprimer le message"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -988,7 +1028,7 @@ const AdminDashboard = () => {
                         </span>
                       </p>
                     </div>
-                    
+
                     <div>
                       <h3 className="text-lg font-semibold text-white mb-2">Statistiques</h3>
                       <div className="grid grid-cols-2 gap-4">
@@ -1036,7 +1076,7 @@ const AdminDashboard = () => {
                     <input
                       type="text"
                       value={roomForm.name}
-                      onChange={(e) => setRoomForm({...roomForm, name: e.target.value})}
+                      onChange={(e) => setRoomForm({ ...roomForm, name: e.target.value })}
                       className="w-full bg-luxury-700 border border-gold-500/30 rounded-lg px-4 py-2 text-white"
                       placeholder="Suite Royale..."
                     />
@@ -1047,7 +1087,7 @@ const AdminDashboard = () => {
                     </label>
                     <select
                       value={roomForm.category_id}
-                      onChange={(e) => setRoomForm({...roomForm, category_id: e.target.value})}
+                      onChange={(e) => setRoomForm({ ...roomForm, category_id: e.target.value })}
                       className="w-full bg-luxury-700 border border-gold-500/30 rounded-lg px-4 py-2 text-white"
                     >
                       {categories.map(category => (
@@ -1069,7 +1109,7 @@ const AdminDashboard = () => {
                       min="1"
                       max="10"
                       value={roomForm.beds}
-                      onChange={(e) => setRoomForm({...roomForm, beds: parseInt(e.target.value)})}
+                      onChange={(e) => setRoomForm({ ...roomForm, beds: parseInt(e.target.value) })}
                       className="w-full bg-luxury-700 border border-gold-500/30 rounded-lg px-4 py-2 text-white"
                     />
                   </div>
@@ -1078,7 +1118,7 @@ const AdminDashboard = () => {
                       <input
                         type="checkbox"
                         checked={roomForm.has_view}
-                        onChange={(e) => setRoomForm({...roomForm, has_view: e.target.checked})}
+                        onChange={(e) => setRoomForm({ ...roomForm, has_view: e.target.checked })}
                         className="mr-2"
                       />
                       Vue panoramique
@@ -1092,7 +1132,7 @@ const AdminDashboard = () => {
                   </label>
                   <textarea
                     value={roomForm.description}
-                    onChange={(e) => setRoomForm({...roomForm, description: e.target.value})}
+                    onChange={(e) => setRoomForm({ ...roomForm, description: e.target.value })}
                     rows={3}
                     className="w-full bg-luxury-700 border border-gold-500/30 rounded-lg px-4 py-2 text-white"
                     placeholder="Description de la chambre..."
@@ -1106,7 +1146,7 @@ const AdminDashboard = () => {
                   <input
                     type="text"
                     value={roomForm.amenities}
-                    onChange={(e) => setRoomForm({...roomForm, amenities: e.target.value})}
+                    onChange={(e) => setRoomForm({ ...roomForm, amenities: e.target.value })}
                     className="w-full bg-luxury-700 border border-gold-500/30 rounded-lg px-4 py-2 text-white"
                     placeholder="Jacuzzi, Balcon, Minibar..."
                   />
@@ -1122,7 +1162,7 @@ const AdminDashboard = () => {
                       min="0"
                       step="0.01"
                       value={roomForm.price_night}
-                      onChange={(e) => setRoomForm({...roomForm, price_night: parseFloat(e.target.value)})}
+                      onChange={(e) => setRoomForm({ ...roomForm, price_night: parseFloat(e.target.value) })}
                       className="w-full bg-luxury-700 border border-gold-500/30 rounded-lg px-4 py-2 text-white"
                     />
                   </div>
@@ -1135,7 +1175,7 @@ const AdminDashboard = () => {
                       min="0"
                       step="0.01"
                       value={roomForm.price_three_days}
-                      onChange={(e) => setRoomForm({...roomForm, price_three_days: parseFloat(e.target.value)})}
+                      onChange={(e) => setRoomForm({ ...roomForm, price_three_days: parseFloat(e.target.value) })}
                       className="w-full bg-luxury-700 border border-gold-500/30 rounded-lg px-4 py-2 text-white"
                     />
                   </div>
@@ -1151,7 +1191,7 @@ const AdminDashboard = () => {
                       min="0"
                       step="0.01"
                       value={roomForm.price_week}
-                      onChange={(e) => setRoomForm({...roomForm, price_week: parseFloat(e.target.value)})}
+                      onChange={(e) => setRoomForm({ ...roomForm, price_week: parseFloat(e.target.value) })}
                       className="w-full bg-luxury-700 border border-gold-500/30 rounded-lg px-4 py-2 text-white"
                     />
                   </div>
@@ -1164,7 +1204,7 @@ const AdminDashboard = () => {
                       min="0"
                       step="0.01"
                       value={roomForm.price_month}
-                      onChange={(e) => setRoomForm({...roomForm, price_month: parseFloat(e.target.value)})}
+                      onChange={(e) => setRoomForm({ ...roomForm, price_month: parseFloat(e.target.value) })}
                       className="w-full bg-luxury-700 border border-gold-500/30 rounded-lg px-4 py-2 text-white"
                     />
                   </div>
@@ -1175,7 +1215,7 @@ const AdminDashboard = () => {
                     <input
                       type="checkbox"
                       checked={roomForm.available}
-                      onChange={(e) => setRoomForm({...roomForm, available: e.target.checked})}
+                      onChange={(e) => setRoomForm({ ...roomForm, available: e.target.checked })}
                       className="mr-2"
                     />
                     Chambre disponible
@@ -1269,6 +1309,16 @@ const AdminDashboard = () => {
                 </button>
                 <button
                   onClick={() => {
+                    handleDeleteMessage(selectedMessage.id);
+                    setShowMessageModal(false);
+                  }}
+                  className="bg-red-500 hover:bg-red-600 text-white py-3 px-4 rounded-lg font-semibold transition-colors flex items-center justify-center"
+                >
+                  <Trash2 className="h-5 w-5 mr-2" />
+                  Supprimer
+                </button>
+                <button
+                  onClick={() => {
                     window.location.href = `mailto:${selectedMessage.email}?subject=Re: ${selectedMessage.subject}`;
                   }}
                   className="flex-1 bg-gold-500 hover:bg-gold-600 text-luxury-900 py-3 rounded-lg font-semibold transition-colors flex items-center justify-center"
@@ -1276,6 +1326,47 @@ const AdminDashboard = () => {
                   <Mail className="h-5 w-5 mr-2" />
                   Répondre par email
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Onglet Sécurité */}
+      {activeTab === 'security' && (
+        <div className="space-y-6">
+          <div className="bg-luxury-800/50 backdrop-blur-sm rounded-2xl p-6 border border-gold-500/20">
+            <h2 className="text-2xl font-serif font-bold text-white mb-6">
+              Surveillance de Sécurité
+            </h2>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Alertes de Sécurité */}
+              <SecurityAlerts className="bg-luxury-700/30 border border-gold-500/20" />
+
+              {/* Statistiques d'Audit */}
+              <div className="bg-luxury-700/30 border border-gold-500/20 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-white mb-4">
+                  Statistiques d'Audit
+                </h3>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gold-200">Événements totaux (7j)</span>
+                    <span className="text-white font-semibold">-</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gold-200">Événements échoués</span>
+                    <span className="text-white font-semibold">-</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gold-200">Utilisateurs uniques</span>
+                    <span className="text-white font-semibold">-</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gold-200">IPs uniques</span>
+                    <span className="text-white font-semibold">-</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

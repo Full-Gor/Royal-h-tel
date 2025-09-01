@@ -13,6 +13,8 @@ import Profile from './pages/profile';
 import Menu from './pages/menu';
 import CGV from './pages/CGV';
 import AdminDashboard from './pages/AdminDashboard';
+import Success from './pages/Success';
+import Bookings from './pages/bookings';
 
 function App() {
   return (
@@ -30,6 +32,8 @@ function App() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/profile" element={<Profile />} />
+                <Route path="/bookings" element={<Bookings />} />
+                <Route path="/success" element={<Success />} />
                 <Route path="/cgv" element={<CGV />} />
                 <Route path="/admin" element={<AdminDashboard />} />
               </Routes>

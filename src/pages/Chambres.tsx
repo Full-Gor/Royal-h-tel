@@ -35,7 +35,8 @@ const Chambres = () => {
     checkIn: '',
     checkOut: '',
     duration: 'night',
-    guests: 1
+    adults: 1,
+    children: 0
   });
 
   useEffect(() => {
@@ -87,19 +88,44 @@ const Chambres = () => {
   const calculateTotal = () => {
     if (!selectedRoom) return 0;
 
-    const { duration } = bookingData;
+    const { duration, adults, children } = bookingData;
+    const totalGuests = adults + children;
+
+    // Prix de base selon la durée
+    let basePrice = 0;
     switch (duration) {
       case 'night':
-        return selectedRoom.price_night;
+        basePrice = selectedRoom.price_night;
+        break;
       case 'threeDays':
-        return selectedRoom.price_three_days;
+        basePrice = selectedRoom.price_three_days;
+        break;
       case 'week':
-        return selectedRoom.price_week;
+        basePrice = selectedRoom.price_week;
+        break;
       case 'month':
-        return selectedRoom.price_month;
+        basePrice = selectedRoom.price_month;
+        break;
       default:
-        return selectedRoom.price_night;
+        basePrice = selectedRoom.price_night;
     }
+
+    // Supplément par personne supplémentaire (au-delà de 2 personnes)
+    const extraGuests = Math.max(0, totalGuests - 2);
+    const extraCost = extraGuests * 50; // 50€ par personne supplémentaire
+
+    return basePrice + extraCost;
+  };
+
+  const calculateDuration = () => {
+    if (!bookingData.checkIn || !bookingData.checkOut) return 0;
+
+    const checkIn = new Date(bookingData.checkIn);
+    const checkOut = new Date(bookingData.checkOut);
+    const diffTime = Math.abs(checkOut.getTime() - checkIn.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    return diffDays;
   };
 
   const handlePayment = async () => {
@@ -111,8 +137,10 @@ const Chambres = () => {
         user_id: user.id,
         room_id: selectedRoom.id,
         check_in: bookingData.checkIn,
-        check_out: bookingData.checkOut || bookingData.checkIn,
-        guests: bookingData.guests,
+        check_out: bookingData.checkOut,
+        guests: bookingData.adults + bookingData.children,
+        adults: bookingData.adults,
+        children: bookingData.children,
         duration_type: bookingData.duration as 'night' | 'threeDays' | 'week' | 'month',
         total_amount: calculateTotal(),
         status: 'pending' as const,
@@ -391,22 +419,6 @@ const Chambres = () => {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-gold-200 text-sm font-medium mb-2">
-                      Durée du séjour
-                    </label>
-                    <select
-                      value={bookingData.duration}
-                      onChange={(e) => setBookingData({ ...bookingData, duration: e.target.value })}
-                      className="w-full bg-luxury-700 border border-gold-500/30 rounded-lg px-4 py-2 text-white"
-                    >
-                      <option value="night">1 Nuit - {selectedRoom.price_night}€</option>
-                      <option value="threeDays">3 Jours - {selectedRoom.price_three_days}€</option>
-                      <option value="week">1 Semaine - {selectedRoom.price_week}€</option>
-                      <option value="month">1 Mois - {selectedRoom.price_month}€</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-gold-200 text-sm font-medium mb-2">
                       Date d'arrivée
                     </label>
                     <input
@@ -420,20 +432,61 @@ const Chambres = () => {
 
                   <div>
                     <label className="block text-gold-200 text-sm font-medium mb-2">
-                      Nombre d'invités
+                      Date de départ
                     </label>
-                    <select
-                      value={bookingData.guests}
-                      onChange={(e) => setBookingData({ ...bookingData, guests: parseInt(e.target.value) })}
+                    <input
+                      type="date"
+                      value={bookingData.checkOut}
+                      onChange={(e) => setBookingData({ ...bookingData, checkOut: e.target.value })}
+                      min={bookingData.checkIn || new Date().toISOString().split('T')[0]}
                       className="w-full bg-luxury-700 border border-gold-500/30 rounded-lg px-4 py-2 text-white"
-                    >
-                      {[...Array(selectedRoom.beds)].map((_, i) => (
-                        <option key={i} value={i + 1}>
-                          {i + 1} invité{i > 0 ? 's' : ''}
-                        </option>
-                      ))}
-                    </select>
+                    />
                   </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-gold-200 text-sm font-medium mb-2">
+                        Adultes
+                      </label>
+                      <select
+                        value={bookingData.adults}
+                        onChange={(e) => setBookingData({ ...bookingData, adults: parseInt(e.target.value) })}
+                        className="w-full bg-luxury-700 border border-gold-500/30 rounded-lg px-4 py-2 text-white"
+                      >
+                        {[...Array(6)].map((_, i) => (
+                          <option key={i} value={i + 1}>
+                            {i + 1} adulte{i > 0 ? 's' : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-gold-200 text-sm font-medium mb-2">
+                        Enfants
+                      </label>
+                      <select
+                        value={bookingData.children}
+                        onChange={(e) => setBookingData({ ...bookingData, children: parseInt(e.target.value) })}
+                        className="w-full bg-luxury-700 border border-gold-500/30 rounded-lg px-4 py-2 text-white"
+                      >
+                        {[...Array(5)].map((_, i) => (
+                          <option key={i} value={i}>
+                            {i} enfant{i > 1 ? 's' : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {bookingData.checkIn && bookingData.checkOut && (
+                    <div className="bg-luxury-700/30 p-3 rounded-lg">
+                      <div className="text-gold-200 text-sm mb-1">Durée du séjour</div>
+                      <div className="text-white font-semibold">
+                        {calculateDuration()} jour{calculateDuration() > 1 ? 's' : ''}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -446,6 +499,24 @@ const Chambres = () => {
                   <span className="text-gold-200">Catégorie</span>
                   <span className="text-white">{selectedRoom.category_name}</span>
                 </div>
+                {bookingData.checkIn && bookingData.checkOut && (
+                  <>
+                    <div className="flex justify-between items-center text-sm mb-2">
+                      <span className="text-gold-200">Durée</span>
+                      <span className="text-white">{calculateDuration()} jour{calculateDuration() > 1 ? 's' : ''}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm mb-2">
+                      <span className="text-gold-200">Voyageurs</span>
+                      <span className="text-white">{bookingData.adults} adulte{bookingData.adults > 1 ? 's' : ''} {bookingData.children > 0 && `+ ${bookingData.children} enfant${bookingData.children > 1 ? 's' : ''}`}</span>
+                    </div>
+                    {bookingData.adults + bookingData.children > 2 && (
+                      <div className="flex justify-between items-center text-sm mb-2">
+                        <span className="text-gold-200">Supplément personnes</span>
+                        <span className="text-white">+{Math.max(0, (bookingData.adults + bookingData.children) - 2) * 50}€</span>
+                      </div>
+                    )}
+                  </>
+                )}
                 <div className="flex justify-between items-center text-xl font-bold border-t border-gold-500/20 pt-2">
                   <span className="text-gold-200">Total</span>
                   <span className="text-white">{calculateTotal()}€</span>
@@ -461,7 +532,7 @@ const Chambres = () => {
                 </button>
                 <button
                   onClick={handlePayment}
-                  disabled={!bookingData.checkIn}
+                  disabled={!bookingData.checkIn || !bookingData.checkOut}
                   className="flex-1 bg-gold-500 hover:bg-gold-600 disabled:bg-gold-500/50 text-luxury-900 py-3 rounded-lg font-semibold transition-colors flex items-center justify-center"
                 >
                   <CreditCard className="h-5 w-5 mr-2" />
