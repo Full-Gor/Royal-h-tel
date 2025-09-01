@@ -82,11 +82,11 @@ const Login = () => {
       return false;
     }
 
-    // Validation basique pour tous les cas
-    if (formData.password.length < 6) {
-      flash.showError('Validation', 'Le mot de passe doit contenir au moins 6 caractères');
-      return false;
-    }
+    // Validation basique pour tous les cas - DÉSACTIVÉE
+    // if (formData.password.length < 6) {
+    //   flash.showError('Validation', 'Le mot de passe doit contenir au moins 6 caractères');
+    //   return false;
+    // }
 
     if (!isLogin) {
       if (!formData.firstName || !formData.lastName) {
