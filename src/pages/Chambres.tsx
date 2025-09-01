@@ -131,8 +131,15 @@ const Chambres = () => {
         return;
       }
 
-      // Créer la session Stripe avec les bonnes URLs
-      const stripeResponse = await fetch('/api/create-checkout-session', {
+      // Initialiser Stripe côté client avec la variable d'environnement Vite
+      const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
+      if (!stripePublishableKey) {
+        throw new Error('Clé Stripe manquante. Vérifiez VITE_STRIPE_PUBLISHABLE_KEY dans vos variables d\'environnement.');
+      }
+      const stripe = (window as any).Stripe(stripePublishableKey);
+
+      // Créer la session Stripe via notre API serverless
+      const response = await fetch('/api/create-checkout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -141,22 +148,28 @@ const Chambres = () => {
           bookingId: data.id,
           amount: calculateTotal(),
           roomName: selectedRoom.name,
-          successUrl: `${window.location.origin}/success?booking_id=${data.id}`,
-          cancelUrl: `${window.location.origin}/chambres`
+          customerEmail: user.email
         }),
       });
 
-      if (!stripeResponse.ok) {
+      if (!response.ok) {
         throw new Error('Erreur lors de la création de la session Stripe');
       }
 
-      const { url } = await stripeResponse.json();
+      const session = await response.json();
 
-      if (url) {
-        // Redirection vers Stripe
-        window.location.href = url;
-      } else {
-        throw new Error('URL de redirection Stripe manquante');
+      if (session.error) {
+        throw new Error(session.error);
+      }
+
+      // Redirection vers Stripe Checkout
+      const result = await stripe.redirectToCheckout({
+        sessionId: session.id,
+      });
+
+      if (result.error) {
+        console.error('Erreur Stripe:', result.error);
+        flash.showError('Erreur', 'Erreur de paiement: ' + result.error.message);
       }
 
     } catch (error) {
@@ -315,8 +328,8 @@ const Chambres = () => {
                     onClick={() => handleBooking(room)}
                     disabled={!room.available}
                     className={`w-full py-3 px-4 rounded-lg font-semibold transition-colors ${room.available
-                        ? 'bg-gold-500 hover:bg-gold-600 text-luxury-900'
-                        : 'bg-gray-500 text-gray-300 cursor-not-allowed'
+                      ? 'bg-gold-500 hover:bg-gold-600 text-luxury-900'
+                      : 'bg-gray-500 text-gray-300 cursor-not-allowed'
                       }`}
                   >
                     {room.available ? 'Réserver Maintenant' : 'Indisponible'}

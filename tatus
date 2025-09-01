@@ -1,0 +1,5 @@
+[33m420e756[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m fix connexion variable
+[33m01ca46b[m add modal page histoire
+[33m880748b[m add video page histoire app ok
+[33mc619fdf[m Ajout de la page bookings et modifications sur Chambres, Home, menu, App, Navbar, Contact, profile
+[33mea74ea9[m Ajout de vercel.json pour corriger le routage SPA (404) sur Vercel
