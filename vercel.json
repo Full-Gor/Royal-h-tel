@@ -38,7 +38,7 @@
     ],
     "redirects": [
         {
-            "source": "/http://(.*)",
+            "source": "/(.*)",
             "destination": "https://$1",
             "permanent": true
         }
