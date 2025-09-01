@@ -61,11 +61,11 @@ const Login = () => {
       [name]: sanitizedValue
     }));
 
-    // Validation en temps réel du mot de passe
-    if (name === 'password' && !isLogin) {
-      const validation = validatePassword(sanitizedValue);
-      setPasswordValidation(validation);
-    }
+               // Validation en temps réel du mot de passe
+           if (name === 'password') {
+             const validation = validatePassword(sanitizedValue);
+             setPasswordValidation(validation);
+           }
   };
 
   const validateForm = () => {
@@ -302,7 +302,7 @@ const Login = () => {
                 )}
 
                 {/* Indicateur de force du mot de passe */}
-                {!isLogin && passwordValidation && (
+                {passwordValidation && (
                   <div className="mt-3">
                     <PasswordStrengthMeter validation={passwordValidation} />
                   </div>

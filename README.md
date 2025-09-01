@@ -29,5 +29,20 @@ Application web moderne pour un hôtel de luxe avec système de réservation, pa
 - Mise à jour automatique des dépendances critiques
 - Plan de réponse aux incidents documenté
 
+## 🔧 Problèmes résolus
+- **Multiple GoTrueClient instances** : Suppression de l'instance Supabase redondante dans main.tsx
+- **Authentification admin** : L'utilisateur admin correct est `admin@chateauroyal.com` (pas admin2102)
+- **Mot de passe admin** : Doit respecter les nouvelles règles strictes (12+ caractères, majuscules, minuscules, chiffres, symboles)
+
+## 🌐 URL de déploiement
+- **URL actuelle** : `royal-h-tel.vercel.app`
+- **URL précédente** : `royal-h-tel-9aa8.vercel.app`
+- **Raison du changement** : Vercel peut générer de nouvelles URLs lors des redéploiements ou changements de configuration
+
+## 👤 Compte Admin
+- **Email** : `admin@chateauroyal.com`
+- **Mot de passe** : Doit respecter les règles de sécurité strictes
+- **Exemple de mot de passe valide** : `Admin123!@#`
+
 ---
 *Dernière modification : $(date)*
