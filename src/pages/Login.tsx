@@ -82,19 +82,10 @@ const Login = () => {
       return false;
     }
 
-    // Validation stricte du mot de passe pour l'inscription
-    if (!isLogin) {
-      const validation = validatePassword(formData.password);
-      if (!validation.isValid) {
-        flash.showError('Validation', 'Le mot de passe ne respecte pas les exigences de sécurité');
-        return false;
-      }
-    } else {
-      // Validation basique pour la connexion
-      if (formData.password.length < 6) {
-        flash.showError('Validation', 'Le mot de passe doit contenir au moins 6 caractères');
-        return false;
-      }
+    // Validation basique pour tous les cas
+    if (formData.password.length < 6) {
+      flash.showError('Validation', 'Le mot de passe doit contenir au moins 6 caractères');
+      return false;
     }
 
     if (!isLogin) {
