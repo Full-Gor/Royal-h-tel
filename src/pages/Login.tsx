@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Crown, Mail, Lock, User, Phone, Eye, EyeOff, Loader, RefreshCw, Shield } from 'lucide-react';
+import { Crown, Mail, Lock, User, Phone, Eye, EyeOff, Loader, RefreshCw, Shield, Sparkles } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useFlash } from '../contexts/FlashContext';
 import { validatePassword, generateSecurePassword } from '../lib/passwordValidation';
@@ -176,32 +176,34 @@ const Login = () => {
                     <label htmlFor="firstName" className="sr-only">Prénom</label>
                     <div className="relative">
                       <User className="absolute left-3 top-3 h-5 w-5 text-gold-400" />
-                      <input
-                        id="firstName"
-                        name="firstName"
-                        type="text"
-                        value={formData.firstName}
-                        onChange={handleInputChange}
-                        className="w-full pl-10 pr-4 py-3 bg-luxury-700/50 border border-gold-500/30 rounded-lg text-white placeholder-gold-300 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-transparent transition-all"
-                        placeholder="Prénom"
-                        required={!isLogin}
-                      />
+                                             <input
+                         id="firstName"
+                         name="firstName"
+                         type="text"
+                         value={formData.firstName}
+                         onChange={handleInputChange}
+                         className="w-full pl-10 pr-4 py-3 bg-luxury-700/50 border border-gold-500/30 rounded-lg text-white placeholder-gold-300 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-transparent transition-all"
+                         placeholder="Prénom"
+                         required={!isLogin}
+                         autoComplete="given-name"
+                       />
                     </div>
                   </div>
                   <div>
                     <label htmlFor="lastName" className="sr-only">Nom</label>
                     <div className="relative">
                       <User className="absolute left-3 top-3 h-5 w-5 text-gold-400" />
-                      <input
-                        id="lastName"
-                        name="lastName"
-                        type="text"
-                        value={formData.lastName}
-                        onChange={handleInputChange}
-                        className="w-full pl-10 pr-4 py-3 bg-luxury-700/50 border border-gold-500/30 rounded-lg text-white placeholder-gold-300 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-transparent transition-all"
-                        placeholder="Nom"
-                        required={!isLogin}
-                      />
+                                             <input
+                         id="lastName"
+                         name="lastName"
+                         type="text"
+                         value={formData.lastName}
+                         onChange={handleInputChange}
+                         className="w-full pl-10 pr-4 py-3 bg-luxury-700/50 border border-gold-500/30 rounded-lg text-white placeholder-gold-300 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-transparent transition-all"
+                         placeholder="Nom"
+                         required={!isLogin}
+                         autoComplete="family-name"
+                       />
                     </div>
                   </div>
                 </div>
@@ -211,16 +213,17 @@ const Login = () => {
                 <label htmlFor="email" className="sr-only">Email</label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-3 h-5 w-5 text-gold-400" />
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-3 bg-luxury-700/50 border border-gold-500/30 rounded-lg text-white placeholder-gold-300 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-transparent transition-all"
-                    placeholder="Adresse email"
-                    required
-                  />
+                                     <input
+                     id="email"
+                     name="email"
+                     type="email"
+                     value={formData.email}
+                     onChange={handleInputChange}
+                     className="w-full pl-10 pr-4 py-3 bg-luxury-700/50 border border-gold-500/30 rounded-lg text-white placeholder-gold-300 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-transparent transition-all"
+                     placeholder="Adresse email"
+                     required
+                     autoComplete="email"
+                   />
                 </div>
               </div>
 
@@ -229,15 +232,16 @@ const Login = () => {
                   <label htmlFor="phone" className="sr-only">Téléphone</label>
                   <div className="relative">
                     <Phone className="absolute left-3 top-3 h-5 w-5 text-gold-400" />
-                    <input
-                      id="phone"
-                      name="phone"
-                      type="tel"
-                      value={formData.phone}
-                      onChange={handleInputChange}
-                      className="w-full pl-10 pr-4 py-3 bg-luxury-700/50 border border-gold-500/30 rounded-lg text-white placeholder-gold-300 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-transparent transition-all"
-                      placeholder="Numéro de téléphone"
-                    />
+                                         <input
+                       id="phone"
+                       name="phone"
+                       type="tel"
+                       value={formData.phone}
+                       onChange={handleInputChange}
+                       className="w-full pl-10 pr-4 py-3 bg-luxury-700/50 border border-gold-500/30 rounded-lg text-white placeholder-gold-300 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-transparent transition-all"
+                       placeholder="Numéro de téléphone"
+                       autoComplete="tel"
+                     />
                   </div>
                 </div>
               )}
@@ -246,16 +250,17 @@ const Login = () => {
                 <label htmlFor="password" className="sr-only">Mot de passe</label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-3 h-5 w-5 text-gold-400" />
-                  <input
-                    id="password"
-                    name="password"
-                    type={showPassword ? 'text' : 'password'}
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    className="w-full pl-10 pr-20 py-3 bg-luxury-700/50 border border-gold-500/30 rounded-lg text-white placeholder-gold-300 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-transparent transition-all"
-                    placeholder="Mot de passe"
-                    required
-                  />
+                                     <input
+                     id="password"
+                     name="password"
+                     type={showPassword ? 'text' : 'password'}
+                     value={formData.password}
+                     onChange={handleInputChange}
+                     className="w-full pl-10 pr-20 py-3 bg-luxury-700/50 border border-gold-500/30 rounded-lg text-white placeholder-gold-300 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-transparent transition-all"
+                     placeholder="Mot de passe"
+                     required
+                     autoComplete={isLogin ? "current-password" : "new-password"}
+                   />
                   <div className="absolute right-3 top-3 flex space-x-1">
                     {!isLogin && (
                       <button
