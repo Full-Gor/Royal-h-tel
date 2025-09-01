@@ -35,12 +35,5 @@
                 }
             ]
         }
-    ],
-    "redirects": [
-        {
-            "source": "/http://(.*)",
-            "destination": "https://$1",
-            "permanent": true
-        }
     ]
 }
