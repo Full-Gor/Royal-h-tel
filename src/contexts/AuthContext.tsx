@@ -160,6 +160,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setLoading(true);
 
+      // MODE DÉMO : Connexions fictives sans base de données
+      const demoUsers = {
+        'user': {
+          password: 'user123',
+          user: {
+            id: 'demo-user-1',
+            email: 'user@demo.com',
+            firstName: 'Utilisateur',
+            lastName: 'Demo',
+            phone: '0612345678',
+            profileImage: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
+            isAdmin: false
+          }
+        },
+        'nazari': {
+          password: 'nazari123',
+          user: {
+            id: 'demo-admin-1',
+            email: 'nazari@admin.com',
+            firstName: 'Nazari',
+            lastName: 'Administrateur',
+            phone: '0644762721',
+            profileImage: 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
+            isAdmin: true
+          }
+        }
+      };
+
+      // Vérifier les identifiants démo
+      const username = email.toLowerCase().trim();
+      const demoUser = demoUsers[username as keyof typeof demoUsers];
+
+      if (demoUser && demoUser.password === password) {
+        // Connexion réussie avec utilisateur démo
+        setUser(demoUser.user);
+        logAuthEvent('LOGIN_SUCCESS_DEMO', true);
+        flash.showSuccess('Connexion réussie', `Bienvenue ${demoUser.user.firstName} ! (Mode démo)`);
+        return true;
+      }
+
+      // Si ce n'est pas un utilisateur démo, essayer Supabase
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password
@@ -168,7 +209,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) {
         console.error('Erreur de connexion:', error);
         logAuthEvent('LOGIN_FAILED', false, error.message);
-        flash.showError('Erreur de connexion', 'Email ou mot de passe incorrect');
+        flash.showError('Erreur de connexion', 'Identifiants incorrects. Utilisez "user" / "user123" ou "nazari" / "nazari123"');
         return false;
       }
 
