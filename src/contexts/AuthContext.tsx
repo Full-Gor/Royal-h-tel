@@ -3,6 +3,7 @@ import { useFlash } from './FlashContext';
 import { supabase } from '../lib/supabase';
 import { monitorSession, cleanupSession, checkConnectionSecurity } from '../lib/authMiddleware';
 import { logAuthEvent } from '../lib/auditService';
+import { localStorageService } from '../lib/localStorageService';
 
 // Types
 interface User {
@@ -48,6 +49,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Vérifier la session existante
     const initAuth = async () => {
       try {
+        // MODE DÉMO : Vérifier d'abord si un utilisateur démo est en session
+        const demoUserJson = localStorage.getItem('demo_user');
+        if (demoUserJson) {
+          const demoUser = JSON.parse(demoUserJson);
+          setUser(demoUser);
+          setLoading(false);
+          return;
+        }
+
         console.log('Auth state change: INITIAL_SESSION', 'undefined');
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
@@ -78,7 +88,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           flash.showSuccess('Connexion réussie', 'Bienvenue dans votre espace royal !');
         }
       } else {
-        setUser(null);
+        // MODE DÉMO : Ne pas écraser l'utilisateur si c'est un utilisateur démo
+        const demoUserJson = localStorage.getItem('demo_user');
+        if (!demoUserJson) {
+          setUser(null);
+        }
         if (event === 'SIGNED_OUT') {
           logAuthEvent('SIGNED_OUT', true);
           cleanupSession(); // Nettoyer les données sensibles
@@ -195,6 +209,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (demoUser && demoUser.password === password) {
         // Connexion réussie avec utilisateur démo
         setUser(demoUser.user);
+        // Sauvegarder dans localStorage pour persister la session
+        localStorage.setItem('demo_user', JSON.stringify(demoUser.user));
         logAuthEvent('LOGIN_SUCCESS_DEMO', true);
         flash.showSuccess('Connexion réussie', `Bienvenue ${demoUser.user.firstName} ! (Mode démo)`);
         return true;
@@ -280,6 +296,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return false;
 
     try {
+      // MODE DÉMO : Utiliser localStorage
+      if (user.id?.startsWith('demo-')) {
+        const updatedUser = localStorageService.updateCurrentUser({
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+          phone: userData.phone,
+          profileImage: userData.profileImage
+        });
+
+        if (updatedUser) {
+          setUser(updatedUser);
+          flash.showSuccess('Profil mis à jour', 'Vos informations ont été sauvegardées');
+          return true;
+        }
+        return false;
+      }
+
       const { error } = await supabase
         .from('profiles')
         .update({
@@ -314,6 +347,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     try {
+      // Nettoyer l'utilisateur démo du localStorage
+      localStorage.removeItem('demo_user');
       await supabase.auth.signOut();
       setUser(null);
     } catch (error) {

@@ -76,11 +76,12 @@ const Login = () => {
       return false;
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      flash.showError('Validation', 'Veuillez entrer une adresse email valide');
-      return false;
-    }
+    // MODE DÉMO : Accepter les noms d'utilisateur simples (user, nazari) en plus des emails
+    // const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    // if (!emailRegex.test(formData.email)) {
+    //   flash.showError('Validation', 'Veuillez entrer une adresse email valide');
+    //   return false;
+    // }
 
     // Validation basique pour tous les cas - DÉSACTIVÉE
     // if (formData.password.length < 6) {
@@ -203,19 +204,19 @@ const Login = () => {
               )}
 
               <div>
-                <label htmlFor="email" className="sr-only">Email</label>
+                <label htmlFor="email" className="sr-only">Identifiant</label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-3 h-5 w-5 text-gold-400" />
                   <input
                     id="email"
                     name="email"
-                    type="email"
+                    type="text"
                     value={formData.email}
                     onChange={handleInputChange}
                     className="w-full pl-10 pr-4 py-3 bg-luxury-700/50 border border-gold-500/30 rounded-lg text-white placeholder-gold-300 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-transparent transition-all"
-                    placeholder="Adresse email"
+                    placeholder="Identifiant (user ou nazari)"
                     required
-                    autoComplete="email"
+                    autoComplete="username"
                   />
                 </div>
               </div>

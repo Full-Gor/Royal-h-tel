@@ -4,6 +4,7 @@ import { Crown, ChefHat, Coffee, Utensils, Wine, Edit, Trash2, Plus, Save, X } f
 import { useAuth } from '../contexts/AuthContext';
 import { useFlash } from '../contexts/FlashContext';
 import { supabase } from '../lib/supabase';
+import { localStorageService } from '../lib/localStorageService';
 
 interface MenuCategory {
   id: string;
@@ -55,6 +56,20 @@ const Menu = () => {
     try {
       setLoading(true);
 
+      // MODE DÉMO : Utiliser localStorage
+      if (user?.id?.startsWith('demo-')) {
+        console.log('📦 Chargement du menu depuis localStorage...');
+        localStorageService.initialize();
+
+        const categoriesData = localStorageService.getMenuCategories();
+        const itemsData = localStorageService.getMenuItems();
+
+        setCategories(categoriesData);
+        setMenuItems(itemsData);
+        setLoading(false);
+        return;
+      }
+
       // Charger les catégories
       const { data: categoriesData, error: categoriesError } = await supabase
         .from('menu_categories')
@@ -64,10 +79,14 @@ const Menu = () => {
 
       if (categoriesError) {
         console.error('Erreur catégories:', categoriesError);
-        console.log('Chargement des données de démonstration du menu...');
-        const demoData = getDemoMenuData();
-        setCategories(demoData.categories);
-        setMenuItems(demoData.items);
+        console.log('Chargement du menu depuis localStorage...');
+        localStorageService.initialize();
+
+        const cats = localStorageService.getMenuCategories();
+        const items = localStorageService.getMenuItems();
+
+        setCategories(cats);
+        setMenuItems(items);
         setLoading(false);
         return;
       }
@@ -81,27 +100,39 @@ const Menu = () => {
 
       if (itemsError) {
         console.error('Erreur items:', itemsError);
-        console.log('Chargement des données de démonstration du menu...');
-        const demoData = getDemoMenuData();
-        setCategories(demoData.categories);
-        setMenuItems(demoData.items);
+        console.log('Chargement du menu depuis localStorage...');
+        localStorageService.initialize();
+
+        const cats = localStorageService.getMenuCategories();
+        const items = localStorageService.getMenuItems();
+
+        setCategories(cats);
+        setMenuItems(items);
         setLoading(false);
         return;
       }
 
       if (!categoriesData || categoriesData.length === 0 || !itemsData || itemsData.length === 0) {
-        const demoData = getDemoMenuData();
-        setCategories(demoData.categories);
-        setMenuItems(demoData.items);
+        localStorageService.initialize();
+
+        const cats = localStorageService.getMenuCategories();
+        const items = localStorageService.getMenuItems();
+
+        setCategories(cats);
+        setMenuItems(items);
       } else {
         setCategories(categoriesData || []);
         setMenuItems(itemsData || []);
       }
     } catch (error) {
       console.error('Erreur lors du chargement:', error);
-      const demoData = getDemoMenuData();
-      setCategories(demoData.categories);
-      setMenuItems(demoData.items);
+      localStorageService.initialize();
+
+      const cats = localStorageService.getMenuCategories();
+      const items = localStorageService.getMenuItems();
+
+      setCategories(cats);
+      setMenuItems(items);
     } finally {
       setLoading(false);
     }
@@ -362,19 +393,46 @@ const Menu = () => {
         name: formData.name,
         description: formData.description,
         price: formData.price,
-        image_url: formData.image_url,
-        ingredients: formData.ingredients.split(',').map(i => i.trim()),
-        is_vegetarian: formData.is_vegetarian,
-        is_vegan: formData.is_vegan,
-        is_gluten_free: formData.is_gluten_free,
-        updated_at: new Date().toISOString()
+        image: formData.image_url,
+        allergens: formData.ingredients.split(',').map(i => i.trim()),
+        is_vegetarian: formData.is_vegetarian
       };
+
+      // MODE DÉMO : Utiliser localStorage
+      if (user?.id?.startsWith('demo-')) {
+        if (editingItem) {
+          // Mise à jour
+          localStorageService.updateMenuItem(editingItem, updateData);
+          flash.showSuccess('Succès', 'Élément mis à jour avec succès');
+        } else {
+          // Création
+          const newItem = {
+            id: `item-${Date.now()}`,
+            ...updateData,
+            category_id: formData.category_id,
+            available: true
+          };
+          localStorageService.addMenuItem(newItem);
+          flash.showSuccess('Succès', 'Élément créé avec succès');
+        }
+
+        setShowModal(false);
+        loadMenuData();
+        return;
+      }
 
       if (editingItem) {
         // Mise à jour
         const { error } = await supabase
           .from('menu_items')
-          .update(updateData)
+          .update({
+            ...updateData,
+            image_url: formData.image_url,
+            ingredients: formData.ingredients.split(',').map(i => i.trim()),
+            is_vegan: formData.is_vegan,
+            is_gluten_free: formData.is_gluten_free,
+            updated_at: new Date().toISOString()
+          })
           .eq('id', editingItem);
 
         if (error) {
@@ -389,7 +447,14 @@ const Menu = () => {
         const { error } = await supabase
           .from('menu_items')
           .insert([{
-            ...updateData,
+            name: formData.name,
+            description: formData.description,
+            price: formData.price,
+            image_url: formData.image_url,
+            ingredients: formData.ingredients.split(',').map(i => i.trim()),
+            is_vegetarian: formData.is_vegetarian,
+            is_vegan: formData.is_vegan,
+            is_gluten_free: formData.is_gluten_free,
             category_id: formData.category_id,
             available: true,
             display_order: menuItems.length + 1
@@ -428,6 +493,14 @@ const Menu = () => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer cet élément ?')) return;
 
     try {
+      // MODE DÉMO : Utiliser localStorage
+      if (user?.id?.startsWith('demo-')) {
+        localStorageService.deleteMenuItem(itemId);
+        flash.showSuccess('Succès', 'Élément supprimé avec succès');
+        loadMenuData();
+        return;
+      }
+
       const { error } = await supabase
         .from('menu_items')
         .update({ available: false })

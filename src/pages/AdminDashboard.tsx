@@ -27,6 +27,7 @@ import {
   Shield
 } from 'lucide-react';
 import SecurityAlerts from '../components/SecurityAlerts';
+import { localStorageService } from '../lib/localStorageService';
 
 // Import conditionnel selon le mode
 const isMySQLMode = import.meta.env.VITE_SITE_MODE === 'mysql';
@@ -145,9 +146,79 @@ const AdminDashboard = () => {
     loadData();
   }, [isAdmin, navigate, flash]);
 
+  const getDemoData = () => {
+    const demoRooms: RoomData[] = [];
+    const demoUsers: UserData[] = [
+      {
+        id: 'demo-user-1',
+        first_name: 'Utilisateur',
+        last_name: 'Demo',
+        email: 'user@demo.com',
+        created_at: new Date().toISOString(),
+        is_admin: false
+      },
+      {
+        id: 'demo-admin-1',
+        first_name: 'Nazari',
+        last_name: 'Administrateur',
+        email: 'nazari@admin.com',
+        created_at: new Date().toISOString(),
+        is_admin: true
+      }
+    ];
+    const demoBookings: BookingData[] = [];
+    const demoMessages: ContactMessageData[] = [];
+    const demoCategories: CategoryData[] = [];
+    const demoStats = {
+      totalRevenue: 0,
+      totalRooms: 6,
+      availableRooms: 6,
+      totalBookings: 0,
+      occupancyRate: 0,
+      newMessages: 0
+    };
+
+    return { demoRooms, demoUsers, demoBookings, demoMessages, demoCategories, demoStats };
+  };
+
   const loadData = async () => {
     try {
       setLoading(true);
+
+      // MODE DÉMO : Utiliser localStorage
+      if (user?.id?.startsWith('demo-')) {
+        console.log('📦 Chargement des données depuis localStorage...');
+
+        // Initialiser les données de démo si nécessaire
+        localStorageService.initialize();
+
+        // Charger toutes les données depuis localStorage
+        const roomsData = localStorageService.getRooms();
+        const usersData = localStorageService.getUsers();
+        const bookingsData = localStorageService.getBookings();
+        const messagesData = localStorageService.getMessages();
+        const categoriesData = localStorageService.getCategories();
+        const statsData = localStorageService.getStats();
+
+        // Convertir au format attendu
+        setRooms(roomsData);
+        setUsers(usersData.map(u => ({
+          id: u.id,
+          first_name: u.firstName || u.first_name || '',
+          last_name: u.lastName || u.last_name || '',
+          email: u.email,
+          created_at: u.created_at || new Date().toISOString(),
+          is_admin: u.isAdmin || u.is_admin || false
+        })));
+        setBookings(bookingsData);
+        setMessages(messagesData);
+        setCategories(categoriesData);
+        setStats(statsData);
+
+        setLoading(false);
+        console.log('✅ Données chargées depuis localStorage');
+        return;
+      }
 
       if (isMySQLMode) {
         const { DatabaseService } = await import('../lib/database');
@@ -183,13 +254,40 @@ const AdminDashboard = () => {
 
         if (roomsError) {
           console.error('Erreur lors du chargement des chambres:', roomsError);
-          flash.showError('Erreur', 'Impossible de charger les chambres');
-        } else {
-          setRooms(roomsData?.map(room => ({
-            ...room,
-            category_name: room.room_categories?.name || 'Non définie'
-          })) || []);
+          // MODE DÉMO : Charger les données depuis localStorage
+          console.log('📦 Basculement vers localStorage...');
+          localStorageService.initialize();
+
+          const rooms = localStorageService.getRooms();
+          const users = localStorageService.getUsers();
+          const bookings = localStorageService.getBookings();
+          const messages = localStorageService.getMessages();
+          const categories = localStorageService.getCategories();
+          const stats = localStorageService.getStats();
+
+          setRooms(rooms);
+          setUsers(users.map(u => ({
+            id: u.id,
+            first_name: u.firstName || u.first_name || '',
+            last_name: u.lastName || u.last_name || '',
+            email: u.email,
+            created_at: u.created_at || new Date().toISOString(),
+            is_admin: u.isAdmin || u.is_admin || false
+          })));
+          setBookings(bookings);
+          setMessages(messages);
+          setCategories(categories);
+          setStats(stats);
+
+          setLoading(false);
+          console.log('✅ Données chargées depuis localStorage');
+          return;
         }
+
+        setRooms(roomsData?.map(room => ({
+          ...room,
+          category_name: room.room_categories?.name || 'Non définie'
+        })) || []);
 
         // Charger les utilisateurs
         const { data: usersData, error: usersError } = await supabase
@@ -199,6 +297,7 @@ const AdminDashboard = () => {
 
         if (usersError) {
           console.error('Erreur lors du chargement des utilisateurs:', usersError);
+          setUsers(getDemoData().demoUsers);
         } else {
           setUsers(usersData || []);
         }
@@ -215,6 +314,7 @@ const AdminDashboard = () => {
 
         if (bookingsError) {
           console.error('Erreur lors du chargement des réservations:', bookingsError);
+          setBookings(getDemoData().demoBookings);
         } else {
           setBookings(bookingsData?.map(booking => ({
             ...booking,
@@ -232,6 +332,7 @@ const AdminDashboard = () => {
 
         if (messagesError) {
           console.error('Erreur lors du chargement des messages:', messagesError);
+          setMessages(getDemoData().demoMessages);
         } else {
           setMessages(messagesData || []);
         }
@@ -253,6 +354,8 @@ const AdminDashboard = () => {
             totalRevenue,
             newMessages: messagesData?.filter(m => m.status === 'new').length || 0
           });
+        } else {
+          setStats(getDemoData().demoStats);
         }
       }
 
@@ -261,7 +364,14 @@ const AdminDashboard = () => {
 
     } catch (error) {
       console.error('Erreur lors du chargement des données:', error);
-      flash.showError('Erreur', 'Une erreur est survenue lors du chargement des données');
+      // MODE DÉMO : Charger les données fictives en cas d'erreur
+      const demo = getDemoData();
+      setRooms(demo.demoRooms);
+      setUsers(demo.demoUsers);
+      setBookings(demo.demoBookings);
+      setMessages(demo.demoMessages);
+      setCategories(demo.demoCategories);
+      setStats(demo.demoStats);
     } finally {
       setLoading(false);
     }
@@ -281,12 +391,18 @@ const AdminDashboard = () => {
           .select('*')
           .order('name');
 
-        if (!error) {
+        if (error) {
+          console.error('Erreur lors du chargement des catégories:', error);
+          // MODE DÉMO : Charger les catégories fictives
+          setCategories(getDemoData().demoCategories);
+        } else {
           setCategories(data || []);
         }
       }
     } catch (error) {
       console.error('Erreur lors du chargement des catégories:', error);
+      // MODE DÉMO : Charger les catégories fictives en cas d'erreur
+      setCategories(getDemoData().demoCategories);
     }
   };
 
@@ -294,6 +410,21 @@ const AdminDashboard = () => {
     try {
       const room = rooms.find(r => r.id === roomId);
       if (!room) return;
+
+      // MODE DÉMO : Utiliser localStorage
+      if (user?.id?.startsWith('demo-')) {
+        const updatedRoom = localStorageService.updateRoom(roomId, { available: !room.available });
+        if (updatedRoom) {
+          setRooms(prev => prev.map(r =>
+            r.id === roomId ? { ...r, available: !r.available } : r
+          ));
+          flash.showSuccess(
+            'Disponibilité mise à jour',
+            `La chambre est maintenant ${!room.available ? 'disponible' : 'indisponible'}`
+          );
+        }
+        return;
+      }
 
       if (isMySQLMode) {
         const { DatabaseService } = await import('../lib/database');
@@ -374,6 +505,39 @@ const AdminDashboard = () => {
         amenities: roomForm.amenities.split(',').map(a => a.trim()).filter(a => a)
       };
 
+      // MODE DÉMO : Utiliser localStorage
+      if (user?.id?.startsWith('demo-')) {
+        if (editingRoom) {
+          // Mise à jour
+          const category = categories.find(c => c.id === roomData.category_id);
+          const updatedRoom = localStorageService.updateRoom(editingRoom.id, {
+            ...roomData,
+            category_name: category?.name || 'Non définie'
+          });
+          if (updatedRoom) {
+            setRooms(prev => prev.map(r =>
+              r.id === editingRoom.id ? { ...r, ...updatedRoom } : r
+            ));
+            flash.showSuccess('Chambre modifiée', 'Les modifications ont été sauvegardées');
+          }
+        } else {
+          // Création
+          const newRoom = {
+            id: `demo-${Date.now()}`,
+            ...roomData,
+            category_name: categories.find(c => c.id === roomData.category_id)?.name || 'Non définie',
+            images: [],
+            total_reservations: 0
+          };
+          localStorageService.addRoom(newRoom);
+          setRooms(prev => [...prev, newRoom]);
+          flash.showSuccess('Chambre créée', 'La nouvelle chambre a été ajoutée');
+        }
+
+        setShowRoomModal(false);
+        return;
+      }
+
       if (isMySQLMode) {
         const { getConnection } = await import('../lib/database');
         const connection = await getConnection();
@@ -443,6 +607,14 @@ const AdminDashboard = () => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer cette chambre ?')) return;
 
     try {
+      // MODE DÉMO : Utiliser localStorage
+      if (user?.id?.startsWith('demo-')) {
+        localStorageService.deleteRoom(roomId);
+        setRooms(prev => prev.filter(room => room.id !== roomId));
+        flash.showSuccess('Chambre supprimée', 'La chambre a été supprimée avec succès');
+        return;
+      }
+
       if (isMySQLMode) {
         const { getConnection } = await import('../lib/database');
         const connection = await getConnection();
@@ -469,6 +641,12 @@ const AdminDashboard = () => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) return;
 
     try {
+      // MODE DÉMO : Les utilisateurs demo ne peuvent pas être supprimés
+      if (user?.id?.startsWith('demo-')) {
+        flash.showInfo('Mode Démo', 'Les utilisateurs de démonstration ne peuvent pas être supprimés');
+        return;
+      }
+
       if (isMySQLMode) {
         const { DatabaseService } = await import('../lib/database');
         await DatabaseService.deleteUser(userId);
@@ -492,6 +670,15 @@ const AdminDashboard = () => {
 
     // Marquer comme lu
     if (message.status === 'new') {
+      // MODE DÉMO : Utiliser localStorage
+      if (user?.id?.startsWith('demo-')) {
+        localStorageService.updateMessage(message.id, { status: 'read' });
+        setMessages(prev => prev.map(m =>
+          m.id === message.id ? { ...m, status: 'read' } : m
+        ));
+        return;
+      }
+
       try {
         if (isMySQLMode) {
           const { getConnection } = await import('../lib/database');
@@ -519,6 +706,16 @@ const AdminDashboard = () => {
 
   const updateBookingStatus = async (bookingId: string, status: string) => {
     try {
+      // MODE DÉMO : Utiliser localStorage
+      if (user?.id?.startsWith('demo-')) {
+        localStorageService.updateBooking(bookingId, { status });
+        setBookings(prev => prev.map(booking =>
+          booking.id === bookingId ? { ...booking, status } : booking
+        ));
+        flash.showSuccess('Statut mis à jour', 'Le statut de la réservation a été modifié');
+        return;
+      }
+
       if (isMySQLMode) {
         const { getConnection } = await import('../lib/database');
         const connection = await getConnection();
@@ -551,6 +748,18 @@ const AdminDashboard = () => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer ce message ?')) return;
 
     try {
+      // MODE DÉMO : Utiliser localStorage
+      if (user?.id?.startsWith('demo-')) {
+        localStorageService.deleteMessage(messageId);
+        setMessages(prev => prev.filter(message => message.id !== messageId));
+        setStats(prev => ({
+          ...prev,
+          newMessages: messages.filter(m => m.status === 'new' && m.id !== messageId).length
+        }));
+        flash.showSuccess('Message supprimé', 'Le message a été supprimé avec succès');
+        return;
+      }
+
       if (isMySQLMode) {
         const { getConnection } = await import('../lib/database');
         const connection = await getConnection();

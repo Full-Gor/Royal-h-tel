@@ -5,6 +5,7 @@ import { useFlash } from '../contexts/FlashContext';
 import { Crown, Bed, Eye, Calendar, CreditCard, Star, Users, Wifi, Car } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { localStorageService } from '../lib/localStorageService';
 
 interface Room {
   id: string;
@@ -276,6 +277,40 @@ const Chambres = () => {
         status: 'pending' as const,
         payment_status: 'pending' as const
       };
+
+      // MODE DÉMO : Utiliser localStorage
+      if (user?.id?.startsWith('demo-')) {
+        const newBooking = {
+          id: `booking-${Date.now()}`,
+          ...bookingDetails,
+          room_name: selectedRoom.name,
+          first_name: user.firstName || user.first_name || 'Utilisateur',
+          last_name: user.lastName || user.last_name || 'Demo',
+          status: 'confirmed',
+          payment_status: 'paid',
+          created_at: new Date().toISOString()
+        };
+
+        localStorageService.addBooking(newBooking);
+
+        flash.showSuccess(
+          'Réservation confirmée !',
+          `Votre réservation pour ${selectedRoom.name} a été enregistrée avec succès.`
+        );
+
+        // Fermer le modal et réinitialiser
+        setShowModal(false);
+        setSelectedRoom(null);
+        setBookingData({
+          checkIn: '',
+          checkOut: '',
+          adults: 1,
+          children: 0,
+          duration: 'night'
+        });
+
+        return;
+      }
 
       const { data, error } = await supabase
         .from('bookings')
