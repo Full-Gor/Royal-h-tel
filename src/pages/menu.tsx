@@ -752,7 +752,7 @@ const Menu = () => {
                             {item.description}
                           </p>
                           <div className="flex flex-wrap gap-2">
-                            {item.ingredients.slice(0, 4).map((ingredient, idx) => (
+                            {(item.ingredients || []).slice(0, 4).map((ingredient, idx) => (
                               <span
                                 key={idx}
                                 className="bg-luxury-700/50 text-gold-300 px-2 py-1 rounded-lg text-xs"
@@ -760,7 +760,7 @@ const Menu = () => {
                                 {ingredient}
                               </span>
                             ))}
-                            {item.ingredients.length > 4 && (
+                            {item.ingredients && item.ingredients.length > 4 && (
                               <span className="bg-luxury-700/50 text-gold-300 px-2 py-1 rounded-lg text-xs">
                                 +{item.ingredients.length - 4} autres
                               </span>
