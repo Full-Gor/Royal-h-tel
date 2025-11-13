@@ -278,6 +278,8 @@ const Chambres = () => {
         payment_status: 'pending' as const
       };
 
+      let bookingId: string;
+
       // MODE DÉMO : Utiliser localStorage
       if (user?.id?.startsWith('demo-')) {
         const newBooking = {
@@ -286,42 +288,30 @@ const Chambres = () => {
           room_name: selectedRoom.name,
           first_name: user.firstName || user.first_name || 'Utilisateur',
           last_name: user.lastName || user.last_name || 'Demo',
-          status: 'confirmed',
-          payment_status: 'paid',
+          status: 'pending', // Changé pour permettre le paiement Stripe
+          payment_status: 'pending',
           created_at: new Date().toISOString()
         };
 
         localStorageService.addBooking(newBooking);
+        bookingId = newBooking.id;
 
-        flash.showSuccess(
-          'Réservation confirmée !',
-          `Votre réservation pour ${selectedRoom.name} a été enregistrée avec succès.`
-        );
+        console.log('📦 Réservation créée en localStorage:', bookingId);
+      } else {
+        // MODE SUPABASE : Utiliser la base de données
+        const { data, error } = await supabase
+          .from('bookings')
+          .insert([bookingDetails])
+          .select()
+          .single();
 
-        // Fermer le modal et réinitialiser
-        setShowModal(false);
-        setSelectedRoom(null);
-        setBookingData({
-          checkIn: '',
-          checkOut: '',
-          adults: 1,
-          children: 0,
-          duration: 'night'
-        });
+        if (error) {
+          console.error('Erreur lors de la réservation:', error);
+          flash.showError('Erreur', 'Impossible de créer la réservation');
+          return;
+        }
 
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from('bookings')
-        .insert([bookingDetails])
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Erreur lors de la réservation:', error);
-        flash.showError('Erreur', 'Impossible de créer la réservation');
-        return;
+        bookingId = data.id;
       }
 
       // Initialiser Stripe côté client avec la variable d'environnement Vite
@@ -338,7 +328,7 @@ const Chambres = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          bookingId: data.id,
+          bookingId: bookingId,
           amount: calculateTotal(),
           roomName: selectedRoom.name,
           customerEmail: user.email

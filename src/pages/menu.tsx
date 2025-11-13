@@ -29,7 +29,7 @@ interface MenuItem {
 }
 
 const Menu = () => {
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
   const flash = useFlash();
   const [categories, setCategories] = useState<MenuCategory[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
@@ -50,7 +50,7 @@ const Menu = () => {
 
   useEffect(() => {
     loadMenuData();
-  }, []);
+  }, [user]); // Recharger quand l'utilisateur change
 
   const loadMenuData = async () => {
     try {
@@ -416,7 +416,7 @@ const Menu = () => {
           flash.showSuccess('Succès', 'Élément créé avec succès');
         }
 
-        setShowModal(false);
+        setShowAddForm(false);
         loadMenuData();
         return;
       }
