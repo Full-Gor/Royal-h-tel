@@ -50,7 +50,7 @@ const Menu = () => {
 
   useEffect(() => {
     loadMenuData();
-  }, []);
+  }, [user]); // Recharger quand l'utilisateur change
 
   const loadMenuData = async () => {
     try {
