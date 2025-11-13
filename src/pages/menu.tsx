@@ -680,13 +680,41 @@ const Menu = () => {
                             className="w-full bg-luxury-700 border border-gold-500/30 rounded-lg px-3 py-2 text-white"
                             placeholder="Prix"
                           />
-                          <input
-                            type="url"
-                            value={formData.image_url}
-                            onChange={(e) => setFormData({...formData, image_url: e.target.value})}
-                            className="w-full bg-luxury-700 border border-gold-500/30 rounded-lg px-3 py-2 text-white"
-                            placeholder="URL de l'image"
-                          />
+
+                          {/* Upload d'image */}
+                          <div className="space-y-2">
+                            <label className="block text-gold-200 text-sm font-medium">Image</label>
+                            <div className="flex gap-2">
+                              <input
+                                type="url"
+                                value={formData.image_url}
+                                onChange={(e) => setFormData({...formData, image_url: e.target.value})}
+                                className="flex-1 bg-luxury-700 border border-gold-500/30 rounded-lg px-3 py-2 text-white"
+                                placeholder="URL de l'image"
+                              />
+                              <label className="bg-gold-500 hover:bg-gold-600 text-luxury-900 px-4 py-2 rounded-lg font-semibold cursor-pointer transition-colors flex items-center justify-center whitespace-nowrap">
+                                📁 Choisir
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      // Convertir en base64
+                                      const reader = new FileReader();
+                                      reader.onloadend = () => {
+                                        setFormData({...formData, image_url: reader.result as string});
+                                      };
+                                      reader.readAsDataURL(file);
+                                    }
+                                  }}
+                                  className="hidden"
+                                />
+                              </label>
+                            </div>
+                            <p className="text-xs text-gold-300">URL ou fichier local (jpg, png, webp)</p>
+                          </div>
+
                           <input
                             type="text"
                             value={formData.ingredients}
@@ -828,15 +856,41 @@ const Menu = () => {
                 className="w-full bg-luxury-700 border border-gold-500/30 rounded-lg px-3 py-2 text-white"
                 placeholder="Prix"
               />
-              
-              <input
-                type="url"
-                value={formData.image_url}
-                onChange={(e) => setFormData({...formData, image_url: e.target.value})}
-                className="w-full bg-luxury-700 border border-gold-500/30 rounded-lg px-3 py-2 text-white"
-                placeholder="URL de l'image"
-              />
-              
+
+              {/* Upload d'image */}
+              <div className="space-y-2">
+                <label className="block text-gold-200 text-sm font-medium">Image</label>
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    value={formData.image_url}
+                    onChange={(e) => setFormData({...formData, image_url: e.target.value})}
+                    className="flex-1 bg-luxury-700 border border-gold-500/30 rounded-lg px-3 py-2 text-white"
+                    placeholder="URL de l'image"
+                  />
+                  <label className="bg-gold-500 hover:bg-gold-600 text-luxury-900 px-4 py-2 rounded-lg font-semibold cursor-pointer transition-colors flex items-center justify-center whitespace-nowrap">
+                    📁 Choisir
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          // Convertir en base64
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            setFormData({...formData, image_url: reader.result as string});
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+                <p className="text-xs text-gold-300">URL ou fichier local (jpg, png, webp)</p>
+              </div>
+
               <input
                 type="text"
                 value={formData.ingredients}
