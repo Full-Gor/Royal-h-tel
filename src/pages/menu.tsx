@@ -19,13 +19,15 @@ interface MenuItem {
   name: string;
   description: string;
   price: number;
-  image_url: string;
-  ingredients: string[];
+  image_url?: string;
+  image?: string;
+  ingredients?: string[];
+  allergens?: string[];
   is_vegetarian: boolean;
-  is_vegan: boolean;
-  is_gluten_free: boolean;
+  is_vegan?: boolean;
+  is_gluten_free?: boolean;
   available: boolean;
-  display_order: number;
+  display_order?: number;
 }
 
 const Menu = () => {
@@ -617,7 +619,7 @@ const Menu = () => {
                   >
                     <div className="relative h-48 overflow-hidden">
                       <img
-                        src={item.image_url}
+                        src={item.image_url || item.image || 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=800'}
                         alt={item.name}
                         className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
                         onError={(e) => {
@@ -752,7 +754,7 @@ const Menu = () => {
                             {item.description}
                           </p>
                           <div className="flex flex-wrap gap-2">
-                            {(item.ingredients || []).slice(0, 4).map((ingredient, idx) => (
+                            {((item.ingredients || item.allergens) || []).slice(0, 4).map((ingredient, idx) => (
                               <span
                                 key={idx}
                                 className="bg-luxury-700/50 text-gold-300 px-2 py-1 rounded-lg text-xs"
@@ -760,9 +762,9 @@ const Menu = () => {
                                 {ingredient}
                               </span>
                             ))}
-                            {item.ingredients && item.ingredients.length > 4 && (
+                            {(item.ingredients || item.allergens) && (item.ingredients || item.allergens).length > 4 && (
                               <span className="bg-luxury-700/50 text-gold-300 px-2 py-1 rounded-lg text-xs">
-                                +{item.ingredients.length - 4} autres
+                                +{(item.ingredients || item.allergens).length - 4} autres
                               </span>
                             )}
                           </div>

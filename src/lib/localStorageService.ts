@@ -191,36 +191,163 @@ class LocalStorageService {
     // Initialiser les items du menu
     if (!this.getMenuItems().length) {
       const defaultMenuItems: MenuItem[] = [
+        // Petit-Déjeuner
         {
           id: 'item-1',
           category_id: 'menu-cat-1',
           name: 'Petit-Déjeuner Continental',
-          description: 'Viennoiseries, confitures maison, jus de fruits frais',
+          description: 'Viennoiseries fraîches, confitures maison, jus d\'orange pressé, café ou thé',
           price: 22,
-          image: 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg',
+          image: 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=1200',
           available: true,
-          allergens: ['gluten', 'lactose'],
+          allergens: ['Croissants', 'Pain au chocolat', 'Confitures maison'],
           is_vegetarian: true
         },
         {
           id: 'item-2',
-          category_id: 'menu-cat-2',
-          name: 'Salade Caesar Royale',
-          description: 'Poulet grillé, parmesan, croûtons maison',
+          category_id: 'menu-cat-1',
+          name: 'Petit-Déjeuner Anglais',
+          description: 'Œufs brouillés crémeux, bacon croustillant, saucisses artisanales',
           price: 28,
+          image: 'https://images.pexels.com/photos/2662875/pexels-photo-2662875.jpeg?auto=compress&cs=tinysrgb&w=1200',
           available: true,
-          allergens: ['gluten', 'lactose'],
+          allergens: ['Œufs', 'Bacon', 'Saucisses'],
           is_vegetarian: false
         },
         {
           id: 'item-3',
+          category_id: 'menu-cat-1',
+          name: 'Pancakes aux Fruits Rouges',
+          description: 'Pancakes moelleux garnis de fruits rouges frais, sirop d\'érable pur',
+          price: 18,
+          image: 'https://images.pexels.com/photos/376464/pexels-photo-376464.jpeg?auto=compress&cs=tinysrgb&w=1200',
+          available: true,
+          allergens: ['Pancakes', 'Fruits rouges', 'Sirop d\'érable'],
+          is_vegetarian: true
+        },
+        // Déjeuner
+        {
+          id: 'item-4',
+          category_id: 'menu-cat-2',
+          name: 'Salade César Royale',
+          description: 'Salade romaine croquante, poulet grillé mariné, parmesan AOP, croûtons dorés',
+          price: 24,
+          image: 'https://images.pexels.com/photos/1059905/pexels-photo-1059905.jpeg?auto=compress&cs=tinysrgb&w=1200',
+          available: true,
+          allergens: ['Salade romaine', 'Poulet', 'Parmesan'],
+          is_vegetarian: false
+        },
+        {
+          id: 'item-5',
+          category_id: 'menu-cat-2',
+          name: 'Risotto aux Cèpes',
+          description: 'Riz Carnaroli crémeux, cèpes sauvages, parmesan Reggiano, truffe noire',
+          price: 32,
+          image: 'https://images.pexels.com/photos/1438672/pexels-photo-1438672.jpeg?auto=compress&cs=tinysrgb&w=1200',
+          available: true,
+          allergens: ['Riz Carnaroli', 'Cèpes', 'Parmesan', 'Truffe'],
+          is_vegetarian: true
+        },
+        {
+          id: 'item-6',
+          category_id: 'menu-cat-2',
+          name: 'Pavé de Saumon Grillé',
+          description: 'Saumon norvégien grillé, légumes de saison rôtis, sauce citron-aneth',
+          price: 36,
+          image: 'https://images.pexels.com/photos/1516415/pexels-photo-1516415.jpeg?auto=compress&cs=tinysrgb&w=1200',
+          available: true,
+          allergens: ['Saumon', 'Légumes', 'Citron'],
+          is_vegetarian: false
+        },
+        // Dîner
+        {
+          id: 'item-7',
           category_id: 'menu-cat-3',
           name: 'Filet de Bœuf Rossini',
-          description: 'Foie gras poêlé, truffe noire, sauce Périgueux',
-          price: 65,
+          description: 'Filet de bœuf français Label Rouge, foie gras poêlé, truffe noire',
+          price: 58,
+          image: 'https://images.pexels.com/photos/2613157/pexels-photo-2613157.jpeg?auto=compress&cs=tinysrgb&w=1200',
           available: true,
-          allergens: [],
+          allergens: ['Filet de bœuf', 'Foie gras', 'Truffe'],
           is_vegetarian: false
+        },
+        {
+          id: 'item-8',
+          category_id: 'menu-cat-3',
+          name: 'Homard Thermidor',
+          description: 'Homard breton entier gratiné, sauce crémeuse au cognac, moutarde de Dijon',
+          price: 68,
+          image: 'https://images.pexels.com/photos/566345/pexels-photo-566345.jpeg?auto=compress&cs=tinysrgb&w=1200',
+          available: true,
+          allergens: ['Homard', 'Cognac', 'Crème'],
+          is_vegetarian: false
+        },
+        {
+          id: 'item-9',
+          category_id: 'menu-cat-3',
+          name: 'Magret de Canard aux Cerises',
+          description: 'Magret de canard du Sud-Ouest, cerises noires confites, sauce au vin rouge',
+          price: 42,
+          image: 'https://images.pexels.com/photos/6210746/pexels-photo-6210746.jpeg?auto=compress&cs=tinysrgb&w=1200',
+          available: true,
+          allergens: ['Magret de canard', 'Cerises', 'Vin rouge'],
+          is_vegetarian: false
+        },
+        {
+          id: 'item-10',
+          category_id: 'menu-cat-3',
+          name: 'Assiette Végétarienne Gastronomique',
+          description: 'Légumes bio de saison rôtis et grillés, quinoa aux herbes, houmous maison',
+          price: 34,
+          image: 'https://images.pexels.com/photos/1640770/pexels-photo-1640770.jpeg?auto=compress&cs=tinysrgb&w=1200',
+          available: true,
+          allergens: ['Légumes bio', 'Quinoa', 'Pois chiches'],
+          is_vegetarian: true
+        },
+        // Boissons
+        {
+          id: 'item-11',
+          category_id: 'menu-cat-4',
+          name: 'Château Margaux 2015',
+          description: 'Grand cru classé de Bordeaux, vin rouge d\'exception aux arômes complexes',
+          price: 280,
+          image: 'https://images.pexels.com/photos/1089930/pexels-photo-1089930.jpeg?auto=compress&cs=tinysrgb&w=1200',
+          available: true,
+          allergens: ['Cabernet Sauvignon', 'Merlot'],
+          is_vegetarian: true
+        },
+        {
+          id: 'item-12',
+          category_id: 'menu-cat-4',
+          name: 'Champagne Dom Pérignon',
+          description: 'Champagne millésimé d\'exception, bulles fines et persistantes',
+          price: 320,
+          image: 'https://images.pexels.com/photos/1407846/pexels-photo-1407846.jpeg?auto=compress&cs=tinysrgb&w=1200',
+          available: true,
+          allergens: ['Chardonnay', 'Pinot Noir'],
+          is_vegetarian: true
+        },
+        {
+          id: 'item-13',
+          category_id: 'menu-cat-4',
+          name: 'Cocktail Royal Signature',
+          description: 'Notre cocktail maison exclusif : champagne rosé, liqueur de framboise',
+          price: 18,
+          image: 'https://images.pexels.com/photos/1283219/pexels-photo-1283219.jpeg?auto=compress&cs=tinysrgb&w=1200',
+          available: true,
+          allergens: ['Champagne rosé', 'Liqueur framboise'],
+          is_vegetarian: true
+        },
+        {
+          id: 'item-14',
+          category_id: 'menu-cat-4',
+          name: 'Whisky Single Malt 25 ans',
+          description: 'Whisky écossais rare vieilli 25 ans en fûts de chêne',
+          price: 45,
+          image: 'https://images.pexels.com/photos/602750/pexels-photo-602750.jpeg?auto=compress&cs=tinysrgb&w=1200',
+          available: true,
+          allergens: ['Orge maltée'],
+          is_vegetarian: true
         }
       ];
       this.saveMenuItems(defaultMenuItems);
